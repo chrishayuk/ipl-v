@@ -304,3 +304,23 @@ fn a_filed_structure_comes_back_with_j105_as_it_went() {
     // system's test in W38 compacts at once.
     assert_eq!((m.wint(35).unwrap(), m.wint(36).unwrap()), (0, 0));
 }
+
+#[test]
+fn a_data_term_taken_for_a_cell_stops_the_run_and_does_not_crash() {
+    // J60 on an alphabetic data term takes its bits for a LINK; the step
+    // that then uses that address ends the run with an error.
+    let mut deck = regions("KP");
+    deck.extend([
+        card("5", "", "", "", ""),
+        word("P0", "10", "K1", ""),
+        word("", "", "J60", ""),
+        word("", "11", "H0", ""),
+        word("", "", "J60", "0"),
+        card("5", "", "01", "", ""),
+        word("K1", "21", "ABCDE", ""),
+        card("5", "", "", "P0", ""),
+    ]);
+    let mut m = machine(&deck);
+    let e = iplv::run(&mut m, 1000).unwrap_err();
+    assert!(e.contains("is used as the address of a cell"), "{}", e);
+}

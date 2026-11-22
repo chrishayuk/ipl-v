@@ -123,7 +123,7 @@ impl Machine {
         let mut lines: Vec<_> = self.lines.iter().map(|(&k, v)| (k, v.clone())).collect();
         lines.sort();
         Image {
-            mem: self.mem.clone(),
+            mem: self.mem.to_vec(),
             regions: self.regions.clone(),
             strays,
             brk: self.brk,
@@ -167,7 +167,7 @@ impl Machine {
     /// Put the machine back as `image` has it, then set H5 minus: the next
     /// step goes on after the J166 that saved it.
     pub fn restore_image(&mut self, image: &Image) {
-        self.mem = image.mem.clone();
+        self.mem = crate::storage::Storage::new(image.mem.clone());
         self.regions = image.regions.clone();
         self.region_of = [255; 128];
         for (i, r) in self.regions.iter().enumerate() {

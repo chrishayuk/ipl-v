@@ -158,8 +158,22 @@ impl Machine {
         Ok(Next::Out(self.prim(n)?, ctx))
     }
 
-    /// One instruction.
+    /// One instruction. A step that used an address outside storage stops
+    /// the run with an error saying so (see `storage`).
     pub fn step(&mut self) -> Res<()> {
+        self.mem.take_wild();
+        let result = self.interpret();
+        match self.mem.take_wild() {
+            Some(a) if result.is_ok() => Err(format!(
+                "{} is used as the address of a cell, and storage has {} cells: a data term taken for the name of a cell?",
+                a,
+                self.mem.len()
+            )),
+            _ => result,
+        }
+    }
+
+    fn interpret(&mut self) -> Res<()> {
         if let Some(t) = self.pending_trap.take() {
             if !self.halted {
                 let space = t == H2;
@@ -358,7 +372,7 @@ impl Machine {
     fn go_on(&mut self) -> Res<()> {
         let cia = self.mem[H1 as usize].symb;
         if self.mem[cia as usize].q == Q_PRIM {
-            self.step()
+            self.interpret()
         } else {
             Ok(())
         }

@@ -87,7 +87,7 @@ pub struct Origin {
 }
 
 pub struct Machine {
-    pub mem: Vec<Word>,
+    pub mem: crate::storage::Storage,
     pub regions: Vec<Region>,
     pub(crate) region_of: [u8; 128],
     /// Regional symbols outside any declared block (see `regional`).
@@ -157,7 +157,7 @@ impl Machine {
         let cells = cells.max(USER_ORG as usize + 64);
         let top = cells.min(H0 as usize);
         let mut m = Machine {
-            mem: vec![Word::ZERO; EXTRA_ORG as usize + (cells - top)],
+            mem: crate::storage::Storage::new(vec![Word::ZERO; EXTRA_ORG as usize + (cells - top)]),
             regions: Vec::new(),
             region_of: [255; 128],
             strays: HashMap::new(),

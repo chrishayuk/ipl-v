@@ -15,6 +15,7 @@ pub mod names;
 pub mod prims;
 pub mod print;
 pub mod restart;
+pub mod storage;
 pub mod tape;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
