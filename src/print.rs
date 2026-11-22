@@ -81,9 +81,18 @@ impl Machine {
                 String::new()
             };
             // PQ is printed for data terms only, as in the manual's own
-            // printed lists (Part One, Fig. 2).
+            // printed run (Part One, Fig. 2, where J151 prints `148  0`
+            // and then `B1`, `C1`, `A1`). Part Two's format (page 214) has
+            // a PQ column for every word; the two conflict, and the run is
+            // followed. The exception is J151's local symbols, which Part
+            // Two says are printed as their addresses with "the Q = 2"
+            // identifying them: Fig. 2 has none, so for those PQ is
+            // printed, as `02 68`.
             let body = match word.datum() {
                 Some(d) => format!("{}{} {}", word.p, word.q, datum_text(d)),
+                None if locals.is_none() && word.q == Q_LOCAL => {
+                    format!("{}{} {}", word.p, word.q, word.symb)
+                }
                 None => {
                     let named = match self.datum(word.symb) {
                         Some(d) if word.symb != 0 => {
@@ -161,7 +170,13 @@ impl Machine {
                     }
                     None => String::new(),
                 };
-                let line = format!("{:<9}{:<9}{}", "", self.name(s), named);
+                // Locals as in J151: the address, with Q = 2 before it.
+                let symbol = if s.q == Q_LOCAL && self.regional_name(s.a).is_none() {
+                    format!("{} {}", s.q, s.a)
+                } else {
+                    self.name(s)
+                };
+                let line = format!("{:<9}{:<9}{}", "", symbol, named);
                 self.print(&line);
             }
             153 => {

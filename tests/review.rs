@@ -158,3 +158,33 @@ fn a_floating_point_number_keeps_the_blank_before_its_exponent() {
     assert_eq!(float_text(0.14e-16), "140000 -16");
     assert_eq!(float_text(-0.33e-29), "-330000 -29");
 }
+
+/// Finding 6. J151, page 214: local symbols "are not translated to form
+/// 9dddd; but instead, their addresses are printed, and the Q = 2
+/// identifies them as locals." J152 handles locals as J151 does.
+#[test]
+fn j151_prints_a_local_symbol_as_its_address_with_q_2() {
+    let deck = [
+        card("2", "P", "", "", "1"),
+        card("2", "L", "", "", "1"),
+        card("5", "", "00", "", ""),
+        word("P0", "10", "L0", ""),
+        word("", "", "J151", ""),
+        word("", "10", "L0", ""),
+        word("", "", "J60", ""),
+        word("", "12", "H0", ""),
+        word("", "", "J152", "0"),
+        card("5", "", "01", "", ""),
+        word("L0", "", "0", ""),
+        word("", "", "9-1", "0"),
+        word("9-1", "", "0", "0"),
+        card("5", "", "", "P0", ""),
+    ];
+    let out = run(1000, &deck).unwrap();
+    let lines: Vec<&str> = out.lines().collect();
+    assert_eq!(lines.len(), 3, "{}", out);
+    assert!(!out.contains("9-"), "{}", out);
+    let address = lines[1].trim().strip_prefix("02 ").expect(lines[1]);
+    assert!(address.parse::<u32>().is_ok(), "{}", out);
+    assert_eq!(lines[2].trim(), format!("2 {}", address));
+}
