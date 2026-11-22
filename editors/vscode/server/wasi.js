@@ -7,6 +7,7 @@ const fs = require("fs");
 
 const ERRNO_BADF = 8;
 const ERRNO_NOENT = 44;
+const ERRNO_NOSYS = 52;
 const FILETYPE_CHARACTER_DEVICE = 2;
 
 const pause = new Int32Array(new SharedArrayBuffer(4));
@@ -131,6 +132,10 @@ function run(wasmPath, { args = [], prefix = new Uint8Array(0) } = {}) {
     fd_close() {
       return 0;
     },
+    clock_time_get(id, precision, timePtr) {
+      view().setBigUint64(timePtr, BigInt(Date.now()) * 1000000n, true);
+      return 0;
+    },
     // No files: there are no preopened directories and nothing can be opened.
     fd_prestat_get() {
       return ERRNO_BADF;
@@ -146,6 +151,12 @@ function run(wasmPath, { args = [], prefix = new Uint8Array(0) } = {}) {
     },
   };
 
+  // Which calls a build imports depends on the toolchain that made it: the
+  // Linux one imports clock_time_get, the macOS one does not. A call this
+  // host has no answer for is given a stub that says "not supported".
+  for (const { module: from, name } of WebAssembly.Module.imports(module)) {
+    if (from === "wasi_snapshot_preview1" && !(name in wasi)) wasi[name] = () => ERRNO_NOSYS;
+  }
   const instance = new WebAssembly.Instance(module, { wasi_snapshot_preview1: wasi });
   memory = instance.exports.memory;
   try {
