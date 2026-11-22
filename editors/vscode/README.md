@@ -43,7 +43,7 @@ In a clone of the repository:
 cd editors/vscode
 npm install
 npm run package
-code --install-extension iplv-language-0.1.0.vsix
+code --install-extension iplv-language-0.1.1.vsix
 ```
 
 That is all it needs. The extension carries the `iplv` program compiled to

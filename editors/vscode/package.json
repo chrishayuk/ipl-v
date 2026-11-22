@@ -2,7 +2,7 @@
   "name": "iplv-language",
   "displayName": "IPL-V (1964)",
   "description": "Card columns, a language server and run commands for IPL-V, the list-processing language of the first artificial intelligence programs.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "chrishayuk",
   "license": "Apache-2.0",
   "engines": {

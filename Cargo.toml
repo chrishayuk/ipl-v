@@ -1,6 +1,6 @@
 [package]
 name = "iplv"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "IPL-V (Newell, Shaw, Simon, Tonge and others, 1957-64): the list-processing language of the first AI programs, implemented as a cell machine from the 1964 manual"
 license = "Apache-2.0"
