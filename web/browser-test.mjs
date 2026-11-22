@@ -130,9 +130,11 @@ try {
   await js(`(() => { const e = document.querySelector("#edit"); e.value = e.value.replace("    J180", "    Q9  "); })()`);
   await click("#load");
   await click("#step");
+  await click("#step");
   check((await text("#means")).includes("never defined"), `an undefined routine stops the run and says why (${await text("#means")})`);
 
   // Dark: the palette follows the colour scheme.
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
   const light = await js(`getComputedStyle(document.body).backgroundColor`);
   await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
   check((await js(`getComputedStyle(document.body).backgroundColor`)) !== light, "the page has a dark form");
