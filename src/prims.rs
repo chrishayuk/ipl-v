@@ -19,14 +19,14 @@ pub const EMPTY: Word = Word {
 
 /// A J101 in progress (manual, Part One, section 9, and Fig. 11).
 pub struct StructureGen {
-    sub: u32,
+    pub(crate) sub: u32,
     /// Every list marked processed, to be restored at the end.
-    record: Vec<u32>,
+    pub(crate) record: Vec<u32>,
     /// Sublists found and not yet generated, in the order found.
-    waiting: std::collections::VecDeque<u32>,
+    pub(crate) waiting: std::collections::VecDeque<u32>,
     /// The next cell to be generated, found before the subprocess sees
     /// the present one, so that the subprocess may erase it.
-    next: Option<u32>,
+    pub(crate) next: Option<u32>,
 }
 
 enum Num {
@@ -87,6 +87,63 @@ impl Machine {
         let next = self.mem[cell as usize].link;
         self.push(self.mem[cell as usize].sym())?;
         Ok(Outcome::Call(sub, Cont::Symbols { sub, next }))
+    }
+
+    /// The origin and size in a block control word (section 17).
+    fn block(&self, a: u32, what: &str) -> Res<(u32, u32)> {
+        let w = self.mem[a as usize];
+        if w.p != 7 || w.q != 7 {
+            return Err(format!("{}: {} is not a block control word", what, self.label(a)));
+        }
+        if (w.symb + w.link) as usize > self.mem.len() {
+            return Err(format!(
+                "{}: the block {} runs off the end of storage",
+                what,
+                self.label(a)
+            ));
+        }
+        Ok((w.symb, w.link))
+    }
+
+    /// J201 (section 24): the cells of a routine go back to available space.
+    /// Its name is a regional cell, which is set empty. Any non-regional
+    /// symbol in SYMB is taken to name a sublist and erased with it, and a
+    /// regional LINK ends a list as 0 does.
+    fn erase_routine(&mut self, routine: u32) -> Res<()> {
+        let w = self.mem[routine as usize];
+        if w.q == 6 || w.q == 7 {
+            return Ok(());
+        }
+        let mut seen = std::collections::HashSet::new();
+        let mut lists = vec![routine];
+        let mut cells = Vec::new();
+        while let Some(head) = lists.pop() {
+            let mut c = head;
+            loop {
+                // The routine's own name is regional; any other regional
+                // cell is where the list ends.
+                if c == 0 || (c != routine && self.is_regional(c)) || !seen.insert(c) {
+                    break;
+                }
+                let word = self.mem[c as usize];
+                cells.push(c);
+                let s = word.symb;
+                if s != 0
+                    && word.q != Q_PRIM
+                    && !self.is_regional(s)
+                    && !SYSTEM.contains(&s)
+                    && (s as usize) < self.mem.len()
+                    && !seen.contains(&s)
+                {
+                    lists.push(s);
+                }
+                c = word.link;
+            }
+        }
+        for c in cells {
+            self.free(c);
+        }
+        Ok(())
     }
 
     /// J60 on a cell: the next cell, returning a private termination cell
@@ -254,6 +311,10 @@ impl Machine {
             }
             Cont::MonitorStart => Ok(Outcome::ContinueP),
             Cont::MonitorEnd => Ok(Outcome::AscendMore),
+            Cont::H5Plus => {
+                self.set_h5(true);
+                Ok(Outcome::Done)
+            }
             Cont::Trap { space } => {
                 self.restore(w(27));
                 self.restore(w(28));
@@ -268,6 +329,7 @@ impl Machine {
     pub fn prim(&mut self, n: u32) -> Res<Outcome> {
         let name = format!("J{}", n);
         let what = name.as_str();
+        self.moves_in(n)?;
         match n {
             // ---- general processes, section 5 ----
             0 => {}
@@ -552,7 +614,16 @@ impl Machine {
             }
             72 => {
                 let list = self.pop().a;
-                self.erase_structure(list)?;
+                if self.is_filed(list) {
+                    self.erase_filed(list)?;
+                } else {
+                    self.erase_structure(list)?;
+                }
+            }
+            74 if self.is_filed(self.arg(0).a) => {
+                let s = self.pop();
+                let new = self.copy_filed(s.a)?;
+                self.push(self.copy_name(s, new))?;
             }
             73 | 74 => {
                 let s = self.pop();
@@ -662,6 +733,14 @@ impl Machine {
                 });
                 self.mark_processed(list)?;
                 return self.present(list, true, true);
+            }
+            103 => {
+                let (sub, block) = (self.pop().a, self.pop().a);
+                let (origin, size) = self.block(block, what)?;
+                let mut cells: Vec<(u32, bool)> = (origin..origin + size).map(|a| (a, true)).collect();
+                cells.reverse();
+                self.gens.push(cells);
+                return self.generate_cells(sub);
             }
             102 => {
                 let (sub, list) = (self.pop().a, self.pop().a);
@@ -866,16 +945,27 @@ impl Machine {
             150..=162 | 180..=189 => return self.print_prim(n),
 
             // ---- in-process loading and restart, sections 19 and 20 ----
-            165 => {
-                if let Some(start) = self.load()? {
-                    return Ok(Outcome::Exec(start));
-                }
-            }
+            165 => match self.load_from_unit()? {
+                Some(crate::loader::Start::At(start)) => return Ok(Outcome::Exec(start)),
+                Some(crate::loader::Start::Restart) => return Ok(Outcome::Restarted),
+                None => {}
+            },
             166 => {
-                // Nothing is saved: this run is the original, not a restart.
-                self.pop();
+                let u = self.pop().a;
+                let unit = self.int(u, what)?;
+                if !(1..=10).contains(&unit) {
+                    return Err(format!(
+                        "{}: save for restart needs a tape, 1 to 10, not unit {}",
+                        what, unit
+                    ));
+                }
+                // H5 is set plus in this run; the image has it minus, as the
+                // restart sets it.
+                let image = self.snapshot();
+                self.write_record(unit as u32, crate::tape::Record::Image(Box::new(image)));
                 self.set_h5(true);
             }
+            140..=146 | 167 | 173 | 174 | 176 => return self.tape_prim(n),
 
             // ---- error trap, section 21 ----
             170 => {
@@ -884,7 +974,36 @@ impl Machine {
                     return Ok(Outcome::Call(action, Cont::Trap { space: false }));
                 }
             }
-            171 => {}
+            171 => self.return_unused_regionals(),
+            172 => {
+                let block = self.pop().a;
+                let (origin, size) = self.block(block, what)?;
+                for a in origin..origin + size {
+                    self.mem[a as usize].link = if a + 1 < origin + size { a + 1 } else { 0 };
+                }
+                self.push(Sym {
+                    a: origin,
+                    q: Q_INTERNAL,
+                })?;
+            }
+            175 => {
+                let s = self.pop();
+                let found = self
+                    .regions
+                    .iter()
+                    .find(|r| s.a >= r.origin && s.a < r.origin + r.size)
+                    .map(|r| r.ch);
+                match found.and_then(|ch| self.region_word(ch)) {
+                    Some(word) => {
+                        self.push(Sym {
+                            a: word,
+                            q: Q_INTERNAL,
+                        })?;
+                        self.set_h5(true);
+                    }
+                    None => self.set_h5(false),
+                }
+            }
 
             // ---- partial words, section 23 ----
             190..=193 => {
@@ -936,16 +1055,10 @@ impl Machine {
                 }
             }
             201 => {
-                self.pop();
+                let routine = self.pop().a;
+                self.erase_routine(routine)?;
             }
-            // Nothing is ever on auxiliary storage here, so a list structure
-            // is always in main storage: J105 does nothing and sets H5 -,
-            // and the test J108 always fails.
-            105 => self.set_h5(false),
-            108 => {
-                self.pop();
-                self.set_h5(false);
-            }
+            105..=109 => return self.aux_prim(n),
             202 => {
                 let text = self.post_mortem("POST MORTEM");
                 self.out.push_str(&text);

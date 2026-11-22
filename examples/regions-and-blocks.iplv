@@ -1,0 +1,101 @@
+REGIONS, BLOCKS AND THEIR CONTROL WORDS 9
+SECTION 17 AND 18 OF THE MANUAL. Z      1
+BEGINS AT A5, SO Z0 IS A5 AND Z1 IS A6: 1
+THE TWO REGIONS ARE SYNONYMS. X1 IS THE 1
+CONTROL WORD OF A BLOCK OF SIX CELLS,   1
+RESERVED BY A TYPE-3 CARD; X2 RESERVES  1
+A8 AND A9.                              1
+                                        2 A                10
+                                        2 K                10
+                                        2 L                10
+                                        2 P                10
+                                        2 R                10
+                                        2 T                10
+                                        2 X                10
+                                        2 Z0      A5        3
+                                        3 X1    02          6
+                                        3 X2    00A8        2
+                                        5       00
+                                          P0      J154
+IS Z1 THE SAME SYMBOL AS A6.                    10Z1
+                                                10A6
+                                                  J2
+                                                709-1
+                                                10T1
+                                                  J157
+                                          9-1     J155
+                                                10A3
+FIND A3'S REGION CONTROL WORD:                    J175
+PRINT P, Q, SYMB AND LINK OF IT.                  P2
+                                                10X1
+AND OF X1'S.                                      P2
+                                                10X1
+MAKE THE BLOCK INTO A LIST.                       J172
+                                                  J8
+LOAD THE CARDS THAT FOLLOW.                       J165  0
+P2: PRINT P, Q, SYMB AND LINK OF CELL   1
+(0) ON A LINE.                          1
+                                          P2      J50
+                                                  J154
+                                                11W0
+P,                                                J190
+                                                  P3
+                                                11W0
+Q,                                                J191
+                                                  P3
+                                                11W0
+SYMB,                                             J192
+                                                  P3
+                                                11W0
+AND LINK.                                         J193
+                                                  P3
+                                                  J155
+                                                  J30   0
+ENTER SYMBOL (0) AND A BLANK.             P3      J156
+                                                10K1
+                                                  J161  0
+                                        5       01
+                                          K1    011
+                                          T1    21SAME
+                                        5         P0
+THE CARDS BELOW ARE READ BY J165, AFTER 1
+P0 HAS MADE THE BLOCK X1 INTO A LIST.   1
+                                        5 X1    01
+LOADED INTO THE CELLS OF BLOCK X1.        L1      0
+                                                  A1
+                                                  A2
+                                                  A3    0
+                                        5       00
+                                          P1    10L1
+                                                  J151
+GENERATE THE CELLS OF THE BLOCK,                  J154
+                                                10X1
+                                                10P4
+                                                  J103
+                                                  J155
+COUNT H2,                                         P5
+RETURN UNUSED REGIONAL CELLS,                     J171
+COUNT IT AGAIN,                                   P5
+                                                10P6
+ERASE ROUTINE P6,                                 J201
+AND AGAIN.                                        P5    0
+P4: ENTER THE NAME OF EACH CELL OF THE  1
+BLOCK.                                  1
+                                          P4      J156
+                                                10K1
+                                                  J161  J4
+P5: PRINT THE NUMBER OF CELLS OF        1
+AVAILABLE SPACE.                        1
+                                          P5      J154
+                                                10H2
+                                                  J126
+                                                40H0
+                                                  J157
+                                                  J155
+                                                  J9    0
+A ROUTINE OF FOUR CELLS                   P6      J0
+AND A SUBLIST OF TWO.                             9-1
+                                                  J0    0
+                                          9-1     J0
+                                                  J0    0
+                                        5         P1

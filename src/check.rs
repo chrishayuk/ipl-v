@@ -431,18 +431,6 @@ pub fn check(text: &str) -> Vec<Diag> {
                         true,
                         format!("there is no basic process J{}", n),
                     );
-                } else if ch == b'J' && !names::implemented(n) && o.control {
-                    say(
-                        line,
-                        start,
-                        end,
-                        false,
-                        format!(
-                            "J{} ({}) is not implemented here",
-                            n,
-                            names::process(n).unwrap_or_default().to_lowercase()
-                        ),
-                    );
                 } else if (ch == b'H' && n > 5) || (ch == b'W' && n > 43) {
                     say(
                         line,

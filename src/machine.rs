@@ -27,6 +27,8 @@ use crate::card::Card;
 use crate::word::*;
 use std::collections::{HashMap, VecDeque};
 
+/// Region control words, one for each region (section 17).
+pub const REGION_WORDS: u32 = 10;
 pub const USER_ORG: u32 = 64;
 pub const H0: u32 = 24574;
 pub const H1: u32 = H0 + 1;
@@ -64,7 +66,7 @@ const SYS_INTS: u32 = SYS_ORG + 8;
 
 pub const LINE_SIZE: usize = 120;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Region {
     pub ch: u8,
     pub origin: u32,
@@ -87,17 +89,33 @@ pub struct Origin {
 pub struct Machine {
     pub mem: Vec<Word>,
     pub regions: Vec<Region>,
-    region_of: [u8; 128],
+    pub(crate) region_of: [u8; 128],
     /// Regional symbols outside any declared block (see `regional`).
-    strays: HashMap<(u8, u32), u32>,
-    stray_names: HashMap<u32, (u8, u32)>,
+    pub(crate) strays: HashMap<(u8, u32), u32>,
+    pub(crate) stray_names: HashMap<u32, (u8, u32)>,
     /// First cell not yet given to a region or to available space.
-    brk: u32,
+    pub(crate) brk: u32,
     /// One past the last cell of the space below the system.
-    top: u32,
-    space_built: bool,
+    pub(crate) top: u32,
+    pub(crate) space_built: bool,
     /// Regional cells that a card or the program has mentioned.
-    used: Vec<bool>,
+    pub(crate) used: Vec<bool>,
+    /// Cells of regions and reserved blocks: never on available space.
+    pub(crate) owned: Vec<bool>,
+    /// Regional cells reserved by Type-3 cards with Q = 0, which J171 keeps.
+    pub(crate) reserved: Vec<bool>,
+    /// The number of cells a Type-3 card with Q = 4 gives available space.
+    pub space_limit: Option<u32>,
+    /// W34 has been pushed down for a set loaded into a block.
+    pub w34_preserved: bool,
+    /// The slow and fast auxiliary stores for data (section 10.1).
+    pub aux: [crate::auxiliary::Store; 2],
+    /// Tapes 1 to 10 (section 13).
+    pub tapes: HashMap<u32, crate::tape::Tape>,
+    /// How the process now being executed was reached, for J166.
+    pub ctx_now: crate::interp::Ctx,
+    /// After a restart: the step to take next, as after the J166 that saved.
+    pub resume_ctx: Option<crate::interp::Ctx>,
     pub free_cells: u32,
     pub low_water: u32,
 
@@ -148,6 +166,14 @@ impl Machine {
             top: top as u32,
             space_built: false,
             used: vec![false; EXTRA_ORG as usize],
+            owned: vec![false; EXTRA_ORG as usize],
+            reserved: vec![false; EXTRA_ORG as usize],
+            space_limit: None,
+            w34_preserved: false,
+            aux: Default::default(),
+            tapes: HashMap::new(),
+            ctx_now: crate::interp::Ctx::None,
+            resume_ctx: None,
             free_cells: 0,
             low_water: 0,
             cards: VecDeque::new(),
@@ -185,7 +211,7 @@ impl Machine {
         m.mem[w(11) as usize] = Word::from_datum(Datum::Int(0));
         m.mem[w(33) as usize] = Word::from_datum(Datum::Int(0));
         // Cells that hold the name of an integer, with the integer they start with.
-        let named: [(u32, i64); 13] = [
+        let named: [(u32, i64); 19] = [
             (10, 1),  // random number control
             (16, 0),  // input mode
             (17, 0),  // output mode
@@ -198,7 +224,13 @@ impl Machine {
             (30, 5),  // field length
             (31, 2),  // trace mode: selective
             (32, 10), // reserved available space
-            (43, 0),  // format
+            (35, 0),  // slow auxiliary: obsolete structures
+            (36, 0),  // and all structures
+            (37, 25), // per cent obsolete before compacting
+            (39, 0),  // the same for fast auxiliary
+            (40, 0),
+            (41, 25),
+            (43, 0), // format
         ];
         for (i, (wn, v)) in named.iter().enumerate() {
             let cell = SYS_INTS + i as u32;
@@ -210,7 +242,8 @@ impl Machine {
                 link: 0,
             };
         }
-        for wn in [12, 13, 14, 15] {
+        // W38 and W42: J0 is the system's own test for compacting.
+        for wn in [12, 13, 14, 15, 38, 42] {
             m.mem[w(wn) as usize].symb = j(0);
         }
         m.mem[SYS_LINE as usize] = Word {
@@ -232,9 +265,101 @@ impl Machine {
 
     // ---- regions and the names of symbols -------------------------------
 
+    /// A region, with its region control word in cells 10 to 63
+    /// (section 17): P = 7, Q = 7, the origin in SYMB and the size in LINK.
     fn add_region(&mut self, ch: u8, origin: u32, size: u32) {
-        self.region_of[(ch & 127) as usize] = self.regions.len() as u8;
+        let i = self.regions.len() as u32;
+        self.region_of[(ch & 127) as usize] = i as u8;
         self.regions.push(Region { ch, origin, size });
+        self.mem[(REGION_WORDS + i) as usize] = Word {
+            p: 7,
+            q: 7,
+            symb: origin,
+            link: size,
+        };
+        for a in origin..origin + size {
+            if (a as usize) < self.owned.len() && !SYSTEM.contains(&a) {
+                self.owned[a as usize] = true;
+            }
+        }
+    }
+
+    /// The cell holding the region control word of region `ch` (J175).
+    pub fn region_word(&self, ch: u8) -> Option<u32> {
+        let i = self.region_of[(ch & 127) as usize];
+        (i != 255).then_some(REGION_WORDS + i as u32)
+    }
+
+    /// The first run of `size` cells from cell 64 that no region or block
+    /// has: where the loader puts a region or block with no origin given.
+    fn find_room(&self, size: u32) -> Res<u32> {
+        let mut start = USER_ORG;
+        while start + size <= self.top {
+            match (start..start + size).find(|&a| self.owned[a as usize]) {
+                None => return Ok(start),
+                Some(taken) => start = taken + 1,
+            }
+        }
+        Err(format!("{} cells do not fit in storage", size))
+    }
+
+    /// Cells `origin..origin + size` for a block or region with an origin
+    /// given: they must lie in the programmer's part of storage.
+    fn check_room(&self, origin: u32, size: u32) -> Res<()> {
+        if origin < USER_ORG || origin + size > self.top {
+            return Err(format!(
+                "cells {} to {} are not in the programmer's part of storage, {} to {}",
+                origin,
+                origin + size.max(1) - 1,
+                USER_ORG,
+                self.top - 1
+            ));
+        }
+        Ok(())
+    }
+
+    /// A Type-3 card with Q = 2: a block of `size` cells, taken from the
+    /// next free run or at `origin`, owned so that it is never available
+    /// space. The control word goes in `name`, if one is given.
+    pub fn reserve_block(&mut self, name: Option<u32>, origin: Option<u32>, size: u32) -> Res<u32> {
+        if self.space_built {
+            return Err("a block is reserved after loading has begun".to_string());
+        }
+        let origin = match origin {
+            Some(o) => {
+                self.check_room(o, size)?;
+                o
+            }
+            None => self.find_room(size)?,
+        };
+        for a in origin..origin + size {
+            self.owned[a as usize] = true;
+        }
+        self.brk = self.brk.max(origin + size);
+        if let Some(n) = name {
+            self.mem[n as usize] = Word {
+                p: 7,
+                q: 7,
+                symb: origin,
+                link: size,
+            };
+        }
+        Ok(origin)
+    }
+
+    /// A Type-3 card with Q = 0: the regional cells `first..first + n` are
+    /// set empty, and J171 will not return them.
+    pub fn reserve_regionals(&mut self, first: u32, n: u32) {
+        for a in first..first + n {
+            if (a as usize) < self.used.len() && self.regional_name(a).is_some() {
+                self.used[a as usize] = true;
+                self.reserved[a as usize] = true;
+                self.mem[a as usize] = Word {
+                    q: Q_INTERNAL,
+                    ..Word::ZERO
+                };
+            }
+        }
     }
 
     pub fn region(&self, ch: u8) -> Option<Region> {
@@ -244,7 +369,10 @@ impl Machine {
 
     /// A Type-2 card: the next block of `size` consecutive cells becomes
     /// the region (section 18.2).
-    pub fn define_region(&mut self, ch: u8, size: u32) -> Res<()> {
+    /// With an origin, the region begins there instead: an absolute
+    /// address, or another region's symbol, which makes the two synonyms.
+    /// Regions given origins may overlap (section 18.2).
+    pub fn define_region(&mut self, ch: u8, size: u32, origin: Option<u32>) -> Res<()> {
         if self.region(ch).is_some() {
             return Err(format!("region {} is already defined", ch as char));
         }
@@ -255,14 +383,17 @@ impl Machine {
             ));
         }
         let size = size.max(1);
-        if self.brk + size + 16 > self.top {
-            return Err(format!(
-                "region {} of {} cells does not fit in storage",
-                ch as char, size
-            ));
-        }
-        self.add_region(ch, self.brk, size);
-        self.brk += size;
+        let origin = match origin {
+            Some(o) => {
+                self.check_room(o, size)?;
+                o
+            }
+            None => self
+                .find_room(size)
+                .map_err(|_| format!("region {} of {} cells does not fit in storage", ch as char, size))?,
+        };
+        self.add_region(ch, origin, size);
+        self.brk = self.brk.max(origin + size);
         Ok(())
     }
 
@@ -326,8 +457,8 @@ impl Machine {
     }
 
     pub fn regional_name(&self, a: u32) -> Option<(u8, u32)> {
-        if a >= self.brk && !SYSTEM.contains(&a) {
-            return self.stray_names.get(&a).copied();
+        if let Some(&name) = self.stray_names.get(&a) {
+            return Some(name);
         }
         self.regions
             .iter()
@@ -391,9 +522,13 @@ impl Machine {
     /// All storage above the regions goes on H2, in ascending order.
     fn build_space(&mut self) {
         self.space_built = true;
-        let cells: Vec<u32> = (self.brk..self.top)
+        let mut cells: Vec<u32> = (USER_ORG..self.top)
+            .filter(|&a| !self.owned[a as usize])
             .chain(EXTRA_ORG..self.mem.len() as u32)
             .collect();
+        if let Some(limit) = self.space_limit {
+            cells.truncate(limit as usize);
+        }
         let mut link = 0;
         for &a in cells.iter().rev() {
             self.mem[a as usize] = Word { link, ..Word::ZERO };
@@ -416,6 +551,60 @@ impl Machine {
             self.build_space();
         }
         self.free_cells
+    }
+
+    /// A cell for the loading processes, from the list W34 names (section
+    /// 18.5): H2, or a block made into a list with J172, whose head is never
+    /// used. When that list runs out, H2 goes in W34 and loading goes on.
+    pub fn load_alloc(&mut self) -> Res<u32> {
+        let list = self.mem[w(34) as usize].symb;
+        if list == H2 || list == 0 {
+            return self.alloc();
+        }
+        let a = self.mem[list as usize].link;
+        if a == 0 {
+            self.warnings.push(format!(
+                "the block {} named in W34 is used up; loading goes on from H2",
+                self.label(list)
+            ));
+            self.mem[w(34) as usize].symb = H2;
+            return self.alloc();
+        }
+        self.mem[list as usize].link = self.mem[a as usize].link;
+        self.mem[a as usize] = Word::ZERO;
+        Ok(a)
+    }
+
+    /// J171: the cells of each of the programmer's regions that no card or
+    /// process has mentioned, and no Type-3 card reserved, go on the end of
+    /// H2. The region ends at its highest symbol in use, and symbols above
+    /// that lose their regional status (section 17).
+    pub fn return_unused_regionals(&mut self) {
+        let mut tail = H2;
+        while self.mem[tail as usize].link != 0 {
+            tail = self.mem[tail as usize].link;
+        }
+        for i in 0..self.regions.len() {
+            let r = self.regions[i];
+            if matches!(r.ch, b'H' | b'J' | b'W') {
+                continue;
+            }
+            let cells = r.origin..r.origin + r.size;
+            let in_use = |m: &Machine, a: u32| m.used[a as usize] || m.reserved[a as usize];
+            let last = cells.clone().rev().find(|&a| in_use(self, a));
+            for a in cells {
+                if !in_use(self, a) && self.owned[a as usize] {
+                    self.owned[a as usize] = false;
+                    self.mem[a as usize] = Word::ZERO;
+                    self.mem[tail as usize].link = a;
+                    tail = a;
+                    self.free_cells += 1;
+                }
+            }
+            let size = last.map(|a| a + 1 - r.origin).unwrap_or(0);
+            self.regions[i].size = size;
+            self.mem[(REGION_WORDS + i as u32) as usize].link = size;
+        }
     }
 
     pub fn alloc(&mut self) -> Res<u32> {
@@ -461,7 +650,7 @@ impl Machine {
             }
             return;
         }
-        if a < self.brk || self.stray_names.contains_key(&a) {
+        if self.owned.get(a as usize).copied().unwrap_or(false) || self.stray_names.contains_key(&a) {
             self.mem[a as usize] = Word {
                 q: Q_INTERNAL,
                 ..Word::ZERO
@@ -587,7 +776,7 @@ impl Machine {
     /// (sections 1.13, 9.4). A cell holding the internal symbol 0 has Q = 4
     /// and is not one.
     pub fn is_term(&self, a: u32) -> bool {
-        a == 0 || self.mem[a as usize] == Word::ZERO
+        a == 0 || self.mem.get(a as usize) == Some(&Word::ZERO)
     }
 
     /// The cell after `c` on its list.
@@ -601,6 +790,14 @@ impl Machine {
         let mut v = Vec::new();
         let mut c = head;
         while let Some(n) = self.next(c) {
+            if n as usize >= self.mem.len() {
+                return Err(format!(
+                    "the list {} goes on from {} to {}, which is not a cell: is a data term on the list?",
+                    self.label(head),
+                    self.label(c),
+                    n
+                ));
+            }
             v.push(n);
             c = n;
             if v.len() > self.mem.len() {

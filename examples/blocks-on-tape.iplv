@@ -1,0 +1,57 @@
+BLOCKS ON TAPE                          9
+X1 IS A BLOCK OF THREE CELLS WHOSE      1
+ORIGIN IS A0, SO ITS CELLS ARE THE DATA 1
+TERMS A0, A1 AND A2. IT IS WRITTEN ON   1
+TAPE 1 WITH J174, A0 IS CLEARED, AND THE1
+BLOCK IS READ BACK WITH J173. J103 AND  1
+J162 DUMP IT EACH TIME.                 1
+                                        2 A                 3
+                                        2 K                10
+                                        2 P                10
+                                        2 T                10
+                                        2 X                10
+                                        3 X1    02A0        3
+                                        5       00
+TAPES ON UNIT 1.                          P0    10K1
+                                                20W19
+                                                10K1
+                                                20W18
+                                                10X1
+WRITE THE BLOCK,                                  J174
+                                                10A0
+CLEAR A0,                                         J124
+                                                  J8
+DUMP THE BLOCK,                                   P1
+                                                10K1
+REWIND,                                           J143
+                                                10X1
+READ THE BLOCK BACK,                              J173
+                                                  P3
+AND DUMP IT AGAIN.                                P1
+                                                10X1
+THERE IS NO SECOND BLOCK:                         J173
+H5 IS MINUS.                                      P3    0
+P1: DUMP BLOCK X1 WITH J162, A CELL TO A1
+LINE.                                   1
+                                          P1    10X1
+                                                10P2
+                                                  J103  0
+                                          P2      J154
+                                                  J162
+                                                  J155
+                                                  J4    0
+P3: PRINT PLUS OR MINUS, AS H5 IS.      1
+                                          P3    709-1
+                                                10T1    9-2
+                                          9-1   10T2
+                                          9-2     J154
+                                                  J157
+                                                  J155  0
+                                        5       01
+                                          K1    011
+                                          A0    017
+                                          A1    018
+                                          A2    21XYZ
+                                          T1    21PLUS
+                                          T2    21MINUS
+                                        5         P0

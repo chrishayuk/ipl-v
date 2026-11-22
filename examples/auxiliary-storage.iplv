@@ -1,0 +1,79 @@
+AUXILIARY STORAGE                       9
+SECTION 10.1 OF THE MANUAL. L1 IS FILED 1
+IN FAST-AUXILIARY STORAGE WITH J106: ITS1
+CELLS GO BACK TO H2, AND ITS HEAD       1
+BECOMES A CONTROL WORD. J108 TESTS FOR  1
+THAT. J150 MOVES IT BACK IN TO PRINT IT,1
+LEAVING AN OBSOLETE IMAGE. THEN IT IS   1
+FILED IN SLOW-AUXILIARY STORAGE, COPIED 1
+WITH J74, AND ERASED WITH J72, AND W35  1
+AND W36 COUNT THE SLOW STRUCTURES UNTIL 1
+J109 COMPACTS THEM.                     1
+                                        2 K                10
+                                        2 L                10
+                                        2 P                10
+                                        2 T                10
+                                        5       00
+SPACE AT THE START.                       P0      P2
+                                                10L1
+FILE L1 IN FAST AUXILIARY.                        J106
+MORE SPACE NOW,                                   P2
+                                                10L1
+AND L1 IS ON AUXILIARY.                           P1
+                                                10L1
+PRINT IT: THIS MOVES IT IN.                       J150
+                                                10L1
+                                                  P1
+                                                10L1
+FILE IT IN SLOW AUXILIARY.                        J107
+                                                10L1
+A COPY IN MAIN STORAGE,                           J74
+PRINTED.                                          J150
+ONE STRUCTURE IN SLOW.                            P3
+                                                10L1
+ERASE: NOW IT IS OBSOLETE.                        J72
+                                                  P3
+                                                10K0
+COMPACT SLOW AUXILIARY.                           J109
+                                                  P3    0
+P1: PRINT FILED OR IN MAIN, AS J108     1
+SAYS.                                   1
+                                          P1      J108
+                                                709-1
+                                                10T1    9-2
+                                          9-1   10T2
+                                          9-2     J154
+                                                  J157
+                                                  J155  0
+P2: PRINT THE NUMBER OF CELLS ON H2.    1
+                                          P2      J154
+                                                10H2
+                                                  J126
+                                                40H0
+                                                  J157
+                                                  J155
+                                                  J9    0
+P3: PRINT 1W35 AND 1W36.                1
+                                          P3      J154
+                                                11W35
+                                                  J157
+                                                10K1
+                                                  J161
+                                                11W36
+                                                  J157
+                                                  J155  0
+                                        5       01
+                                          K0    010
+                                          K1    011
+                                          T1    21FILED
+                                          T2    21MAIN
+                                          L1      0
+                                                  9-1
+                                                  K1
+                                                  9-2   0
+                                          9-1     0
+                                                  T1
+                                                  T2    0
+                                          9-2     0
+                                                  K0    0
+                                        5         P0

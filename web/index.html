@@ -373,7 +373,7 @@ function renderMachine(s) {
   }
   const facts = el("div", "facts");
   for (const [k, v] of [["H5", s.h5], ["level", s.level], ["H3", s.h3.toLocaleString()], ["cards to read", s.cards]]) facts.append(el("span", "", k), el("b", "", String(v)));
-  const used = s.space - s.free;
+  const used = s.space - s.free - (s.reserve?.length ?? 0);
   const bar = el("div");
   bar.id = "space";
   const fill = el("i"), low = el("u");
@@ -409,7 +409,8 @@ function renderMachine(s) {
     calls.append(tr);
   });
   box.replaceChildren(now, means, facts,
-    el("h2", "", `available space: ${s.free.toLocaleString()} of ${s.space.toLocaleString()} cells`), bar,
+    el("h2", "", `available space: ${s.free.toLocaleString()} of ${s.space.toLocaleString()} cells` +
+      (s.reserve?.length ? `, and ${s.reserve.length} withheld for the trap on H2` : "")), bar,
     el("h2", "", "H0, the communication cell"), h0, el("h2", "", "working cells"), w,
     el("h2", "", "H1: routines in progress"), calls);
 }
@@ -438,6 +439,8 @@ function renderMap(s) {
   for (let a = 0; a < Math.min(top, s.brk); a++) kind[a] = 1;
   for (const a of loaded) if (a < top) kind[a] = 2;
   for (let c = words.link(H2), n = 0; c !== 0 && n < words.length; c = words.link(c), n++) if (c < top) kind[c] = 0;
+  // The cells withheld for the trap on H2 are available space kept back.
+  for (const c of s.reserve ?? []) if (c < top) kind[c] = 0;
   for (let a = s.brk; a < top; a++) if (kind[a] === 3 && words.q(a) === 1 && !loaded.has(a)) kind[a] = 4;
   const under = (cell, k) => {
     for (let c = words.link(cell), n = 0; c !== 0 && n < top; c = words.link(c), n++) if (c < top) kind[c] = k;

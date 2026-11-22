@@ -54,7 +54,6 @@ fn problems_are_found_by_column() {
         messages(&text),
         [
             "3:51 there is no basic process J139",
-            "4:51 J162 (enter (0) according to format 1w43) is not implemented here",
             "5:49 P is a digit from 0 to 7, or blank",
             "5:51 the local symbol 9-4 is used but never defined in this list structure",
             "6:51 Q7 is executed, but no card defines it",

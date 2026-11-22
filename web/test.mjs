@@ -55,7 +55,8 @@ const m = await Iplv.create(module);
 m.load(deck("manual-f1"));
 let s = m.state();
 check(s.cia.place === "E1" && s.cia.p === 1 && s.cia.q === 3 && s.cia.symb === "K1", "the first instruction is 13 K1 at E1");
-check(s.level === 1 && s.h5 === "+" && s.h3 === 4 && s.free === 21858, "level 1, H5 +, H3 4, 21858 cells available");
+// 21858 at the end of loading, as Fig. 1 says, less 1W32 = 10 withheld.
+check(s.level === 1 && s.h5 === "+" && s.h3 === 4 && s.free === 21848 && s.reserve.length === 10, "level 1, H5 +, H3 4, 21848 cells available and 10 withheld");
 check(s.regions.some((r) => r.ch === "K" && r.origin === 114 && r.size === 10), "region K is cells 114 to 123");
 const lines = m.lines();
 check(lines.some(([line, a]) => a === 95 && line === s.cia.line), "E1's card is the line of the current instruction");

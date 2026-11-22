@@ -200,7 +200,37 @@ impl Machine {
                 let v = self.int(s.a, "J161")? + self.wint(25)?;
                 self.set_wint(25, v);
             }
-            180 => match self.cards.pop_front() {
+            162 => {
+                // The formats are the machine system's (section 16.2); here
+                // 1W43 = 0 is octal and anything else decimal: the cell's
+                // name, then P, Q, SYMB and LINK.
+                let a = self.pop().a;
+                let word = self.mem[a as usize];
+                let name = self.label(a);
+                let text = if self.wint(43)? == 0 {
+                    format!(
+                        "{} {}{} {:05o} {:05o}",
+                        name, word.p, word.q, word.symb, word.link
+                    )
+                } else {
+                    format!("{} {}{} {:5} {:5}", name, word.p, word.q, word.symb, word.link)
+                };
+                self.enter(&text, true)?;
+            }
+            189 => {
+                let to = self.pop().a;
+                let field = self.field()?;
+                let col = self.wint(21)?.max(1) as usize - 1;
+                let from_col = self.wint(25)? - field.len() as i64;
+                let line = self.lines.entry(to).or_insert_with(|| vec![b' '; LINE_SIZE]);
+                let room = line.len().saturating_sub(col).min(field.len());
+                line[col..col + room].copy_from_slice(&field[..room]);
+                let size = self.wint(30)?;
+                // 1W25 is left after the last column transferred.
+                self.set_wint(25, from_col + room as i64);
+                self.set_h5(room as i64 == size);
+            }
+            180 => match self.read_card(self.wint(18)?.clamp(0, 10) as u32) {
                 Some(card) => {
                     let line = self.line();
                     line.fill(b' ');

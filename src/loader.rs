@@ -11,11 +11,23 @@ use crate::word::*;
 use std::collections::HashMap;
 
 /// What a header card says about the set that follows it (section 18.5).
+/// What a deck says to do after loading.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Start {
+    /// Interpret the routine named on the start card.
+    At(u32),
+    /// Go on from the J166 that wrote the storage image just reloaded.
+    Restart,
+}
+
 #[derive(Clone, Copy)]
-struct Header {
+pub(crate) struct Header {
     data: bool,
     absolute: bool,
     skip: bool,
+    /// TYPE 6 or 7: data list structures go to the fast or slow auxiliary
+    /// store once loaded (section 18.5). Routines stay in main storage.
+    aux: Option<usize>,
 }
 
 impl Machine {
@@ -27,16 +39,16 @@ impl Machine {
         }
     }
 
-    /// Load sets until a start card. Returns the routine it names, or None
-    /// if the cards run out first.
-    pub fn load(&mut self) -> Res<Option<u32>> {
+    /// Load sets until a start card, or a restart card. Returns what to do
+    /// next, or None if the cards run out first.
+    pub fn load(&mut self) -> Res<Option<Start>> {
         let mut header: Option<Header> = None;
         let mut set: Vec<Card> = Vec::new();
         while let Some(card) = self.cards.pop_front() {
             // A header ends the set before it.
             if (5..=8).contains(&card.typ) {
                 if let Some(h) = header {
-                    self.load_set(&set, h)?;
+                    self.load_header_set(&set, h)?;
                 }
                 set.clear();
             }
@@ -62,23 +74,40 @@ impl Machine {
                         Field::Regional(ch, _) => ch,
                         _ => return Err(at(&card, "a region card needs the region's letter in NAME")),
                     };
-                    if card.symb != Field::Blank {
-                        self.warnings
-                            .push(at(&card, "the origin in SYMB of a region card is ignored"));
-                    }
                     let size = card.count(COL_LINK).unwrap_or(1);
+                    let origin = self.origin_of(card.symb).map_err(|e| at(&card, &e))?;
                     if self.region(ch).is_some() {
                         self.warnings.push(at(
                             &card,
                             &format!("region {} is already defined; this card is ignored", ch as char),
                         ));
                     } else {
-                        self.define_region(ch, size).map_err(|e| at(&card, &e))?;
+                        self.define_region(ch, size, origin).map_err(|e| at(&card, &e))?;
                     }
                 }
                 3 => self.block_card(&card)?,
+                // Restart mode (section 20): storage is reloaded from the
+                // tape named in SYMB; the cards after this one are left for
+                // the program, which normally reads them with J165.
+                5 if card.p == 4 => {
+                    if self.w34_preserved {
+                        self.restore(w(34));
+                        self.w34_preserved = false;
+                    }
+                    let unit = match card.symb {
+                        Field::Internal(n) if (1..=10).contains(&n) => n,
+                        _ => return Err(at(&card, "a restart card needs the tape, 1 to 10, in SYMB")),
+                    };
+                    let image = self.read_image(unit).map_err(|e| at(&card, &e))?;
+                    self.restore_image(&image);
+                    return Ok(Some(Start::Restart));
+                }
                 5..=8 => {
                     if let Field::Regional(ch, n) = card.symb {
+                        if self.w34_preserved {
+                            self.restore(w(34));
+                            self.w34_preserved = false;
+                        }
                         let start = self.regional(ch, n)?;
                         let free = self.available();
                         if let Some(l) = self.listing.as_mut() {
@@ -88,13 +117,34 @@ impl Machine {
                             ));
                             l.push_str(&format!("NUMBER OF CELLS ON AVAILABLE SPACE={}\n", free));
                         }
-                        return Ok(Some(start));
+                        return Ok(Some(Start::At(start)));
+                    }
+                    // NAME = a block made into a list: load the set into its
+                    // cells, until the next header (section 18.5).
+                    if self.w34_preserved {
+                        self.restore(w(34));
+                        self.w34_preserved = false;
+                    }
+                    if card.typ == 5 {
+                        if let Field::Regional(ch, n) = card.name {
+                            let block = self.regional(ch, n)?;
+                            let list = self.mem[block as usize].symb;
+                            self.preserve(w(34))?;
+                            self.mem[w(34) as usize].symb = list;
+                            self.w34_preserved = true;
+                        }
                     }
                     header = Some(Header {
                         data: card.q % 2 == 1,
                         absolute: card.q >= 4,
-                        // Restart mode reloads a saved storage image, and there is none.
+                        // P = 4 on Types 6 to 8 is restart mode too, which only a
+                        // Type-5 card can start: the set is passed over.
                         skip: card.typ == 8 || card.p == 4,
+                        aux: match card.typ {
+                            6 => Some(crate::auxiliary::FAST),
+                            7 => Some(crate::auxiliary::SLOW),
+                            _ => None,
+                        },
                     });
                     if card.q == 2 || card.q == 3 {
                         self.internals.clear();
@@ -104,27 +154,112 @@ impl Machine {
             }
         }
         if let Some(h) = header {
-            self.load_set(&set, h)?;
+            self.load_header_set(&set, h)?;
         }
         Ok(None)
     }
 
-    /// A Type-3 card. Only print lines need storage of their own here.
+    /// A set under its header: loaded, and for a set of data under a Type-6
+    /// or Type-7 header, each list structure then filed in auxiliary.
+    fn load_header_set(&mut self, set: &[Card], h: Header) -> Res<()> {
+        let internals = self.internals.clone();
+        self.load_set(set, h)?;
+        let (Some(store), true, false) = (h.aux, h.data, h.skip) else {
+            return Ok(());
+        };
+        for card in set.iter().filter(|c| c.typ == 0) {
+            let head = match card.name {
+                Field::Regional(ch, n) => self.lookup(ch, n),
+                Field::Internal(n) if h.absolute => Some(n),
+                Field::Internal(n) => self.internals.get(&n).or(internals.get(&n)).copied(),
+                _ => None,
+            };
+            if let Some(head) = head {
+                self.file_structure(head, store).map_err(|e| at(card, &e))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// A list structure read by J140 (section 14): its cards are loaded as
+    /// data, into cells from 1W34, with internal symbols taken to be
+    /// addresses that already exist. Returns the name of its head.
+    pub(crate) fn load_structure(&mut self, cards: &[Card]) -> Res<u32> {
+        let h = Header {
+            data: true,
+            absolute: true,
+            skip: false,
+            aux: None,
+        };
+        let loaded = self.load_set(cards, h)?;
+        loaded
+            .first()
+            .copied()
+            .ok_or_else(|| "an empty list structure".to_string())
+    }
+
+    /// The origin in SYMB of a Type-2 or Type-3 card: an absolute address,
+    /// or a regional symbol already defined.
+    fn origin_of(&mut self, f: Field) -> Res<Option<u32>> {
+        Ok(match f {
+            Field::Blank => None,
+            Field::Internal(n) => Some(n),
+            Field::Regional(ch, n) => match self.lookup(ch, n) {
+                Some(a) => Some(a),
+                None => {
+                    return Err(format!(
+                        "{}{} is not defined yet, so cannot be an origin",
+                        ch as char, n
+                    ))
+                }
+            },
+            Field::Local(_) => return Err("a local symbol cannot be an origin".to_string()),
+        })
+    }
+
+    /// A Type-3 card (section 18.3).
     fn block_card(&mut self, card: &Card) -> Res<()> {
         // The first edition of the manual put the name of a print line in
         // SYMB (section 25.3), and decks of 1961 have it there.
-        let name = if card.name == Field::Blank {
+        let name = if card.name == Field::Blank && card.q == 1 {
             card.symb
         } else {
             card.name
         };
-        match (card.q, name) {
-            (1, Field::Regional(ch, n)) => {
-                let a = self.regional(ch, n)?;
-                let words = card
-                    .count(COL_LINK)
-                    .filter(|&n| n > 0)
-                    .unwrap_or((LINE_SIZE / 6) as u32);
+        let name = match name {
+            Field::Regional(ch, n) => Some(self.regional(ch, n).map_err(|e| at(card, &e))?),
+            Field::Blank => None,
+            _ => return Err(at(card, "the name of a block must be a regional symbol")),
+        };
+        let size = card.count(COL_LINK).unwrap_or(0);
+        match card.q {
+            // Reserve regional symbols: SYMB is the first, LINK how many.
+            0 => {
+                let first = match card.symb {
+                    Field::Regional(ch, n) => self.lookup(ch, n),
+                    _ => None,
+                };
+                let Some(first) = first else {
+                    return Err(at(
+                        card,
+                        "reserving regional symbols needs a regional symbol of a defined region in SYMB",
+                    ));
+                };
+                self.reserve_regionals(first, size.max(1));
+                if let Some(n) = name {
+                    self.mem[n as usize] = Word {
+                        p: 7,
+                        q: 7,
+                        symb: first,
+                        link: size.max(1),
+                    };
+                }
+            }
+            1 => {
+                let Some(a) = name else {
+                    return Err(at(card, "a print line needs a regional name"));
+                };
+                let words = if size > 0 { size } else { (LINE_SIZE / 6) as u32 };
                 // Six characters to the word, as on the 704 and 7090.
                 let mut text = vec![b' '; words as usize * 6];
                 if card.p != 0 {
@@ -141,11 +276,36 @@ impl Machine {
                 };
                 self.lines.insert(a, text);
             }
-            (0, _) => {}
-            _ => self.warnings.push(at(
-                card,
-                "this block reservation is not implemented and is ignored",
-            )),
+            2 => {
+                if size == 0 {
+                    return Err(at(card, "a block needs its size in LINK"));
+                }
+                let origin = self.origin_of(card.symb).map_err(|e| at(card, &e))?;
+                self.reserve_block(name, origin, size).map_err(|e| at(card, &e))?;
+            }
+            // The buffer for routines in auxiliary storage: here they are
+            // kept in main storage, so it needs no room.
+            3 => {}
+            // How much available space there is to be.
+            4 => {
+                if size > 0 {
+                    self.space_limit = Some(size);
+                }
+                if let Some(n) = name {
+                    self.mem[n as usize] = Word {
+                        p: 7,
+                        q: 7,
+                        symb: 0,
+                        link: size,
+                    };
+                }
+            }
+            q => {
+                return Err(at(
+                    card,
+                    &format!("a Type-3 card with Q = {} reserves nothing", q),
+                ))
+            }
         }
         Ok(())
     }
@@ -155,9 +315,10 @@ impl Machine {
     /// assembly listing show: a card's own cell, then the next cell if the
     /// card's LINK or SYMB is blank, then a cell for each local symbol met
     /// for the first time.
-    fn load_set(&mut self, set: &[Card], h: Header) -> Res<()> {
+    fn load_set(&mut self, set: &[Card], h: Header) -> Res<Vec<u32>> {
+        let mut loaded = Vec::new();
         if h.skip {
-            return Ok(());
+            return Ok(loaded);
         }
         let cards = set;
         let set: Vec<&Card> = cards.iter().filter(|c| c.typ == 0).collect();
@@ -194,10 +355,11 @@ impl Machine {
                 Field::Local(n) => locals.define(self, n).map_err(fail)?,
                 Field::Blank => match promised {
                     Some(a) => a,
-                    None => self.alloc().map_err(fail)?,
+                    None => self.load_alloc().map_err(fail)?,
                 },
             };
             promised = None;
+            loaded.push(addr);
             self.origins.insert(
                 addr,
                 Origin {
@@ -224,7 +386,7 @@ impl Machine {
                 if card.link == Field::Blank || card.symb == Field::Blank {
                     next = Some(match set.get(i + 1).map(|c| c.name) {
                         Some(Field::Blank) => {
-                            let a = self.alloc().map_err(fail)?;
+                            let a = self.load_alloc().map_err(fail)?;
                             promised = Some(a);
                             Sym { a, q: Q_LOCAL }
                         }
@@ -285,7 +447,7 @@ impl Machine {
             }
         }
         locals.close(self);
-        Ok(())
+        Ok(loaded)
     }
 
     /// An internal symbol on a card. 0 to 9 are always themselves; the rest
@@ -304,7 +466,7 @@ impl Machine {
         if let Some(&a) = self.internals.get(&n) {
             return Ok(a);
         }
-        let a = self.alloc()?;
+        let a = self.load_alloc()?;
         self.internals.insert(n, a);
         Ok(a)
     }
@@ -325,7 +487,7 @@ impl Locals {
         match self.cells.get(&n) {
             Some(&a) => Ok(a),
             None => {
-                let a = m.alloc()?;
+                let a = m.load_alloc()?;
                 self.cells.insert(n, a);
                 Ok(a)
             }
@@ -336,7 +498,7 @@ impl Locals {
         if let Some(&a) = self.cells.get(&n) {
             return Ok(a);
         }
-        let a = m.alloc()?;
+        let a = m.load_alloc()?;
         self.cells.insert(n, a);
         self.undefined.push((
             n,

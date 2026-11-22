@@ -13,8 +13,8 @@ struct T {
 impl T {
     fn new() -> T {
         let mut m = Machine::new(2000);
-        m.define_region(b'S', 20).unwrap();
-        m.define_region(b'A', 20).unwrap();
+        m.define_region(b'S', 20, None).unwrap();
+        m.define_region(b'A', 20, None).unwrap();
         T { m }
     }
     fn s(&mut self, n: u32) -> Sym {

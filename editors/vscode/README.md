@@ -17,7 +17,7 @@ word, and most of what this extension does is make that comfortable.
 - **Problems as you type.** A comment that runs into column 41, P or Q that
   is not an octal digit, a local symbol used but never defined in its list
   structure, a routine executed that no card defines, a basic process that
-  does not exist or is not implemented, a symbol beyond its region, a deck
+  does not exist, a symbol beyond its region, a deck
   with no start card.
 - **Symbols.** Go to a symbol's definition, find where it is used, rename
   it in every field it stands in (a local symbol within its own list

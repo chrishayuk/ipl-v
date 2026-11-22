@@ -58,7 +58,10 @@ fn load() -> Machine {
     m.trace_all = Some(false);
     m.read_deck(&std::fs::read_to_string("examples/manual-f1.iplv").unwrap());
     let start = m.load().unwrap().unwrap();
-    assert_eq!(start, E1);
+    assert_eq!(start, iplv::loader::Start::At(E1));
+    let iplv::loader::Start::At(start) = start else {
+        panic!("a restart")
+    };
     m.start(start);
     m
 }
@@ -152,6 +155,9 @@ fn the_trace_of_r3_is_figure_3() {
     m.trace_all = Some(false);
     m.read_deck(deck);
     let start = m.load().unwrap().unwrap();
+    let iplv::loader::Start::At(start) = start else {
+        panic!("a restart")
+    };
     m.start(start);
 
     // The manual's name for each cell of P0 (its cells 100 to 103), R3

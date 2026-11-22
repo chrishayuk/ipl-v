@@ -38,6 +38,9 @@ pub enum Outcome {
     Halt,
     ContinueP,
     AscendMore,
+    /// J165 met a restart card: storage has been replaced, and the next
+    /// step goes on from the J166 that saved it.
+    Restarted,
 }
 
 /// Work waiting for a routine to finish.
@@ -63,6 +66,8 @@ pub enum Cont {
     Trap {
         space: bool,
     },
+    /// The compacting routine of W38 or W42, run after J105: then H5 +.
+    H5Plus,
 }
 
 /// How the process was reached: named in an instruction with P = 0, or as
@@ -149,6 +154,7 @@ impl Machine {
         if let Some(c) = self.prim_counts.get_mut(n as usize) {
             *c += 1;
         }
+        self.ctx_now = ctx;
         Ok(Next::Out(self.prim(n)?, ctx))
     }
 
@@ -167,7 +173,10 @@ impl Machine {
                 }
             }
         }
-        let mut next = Next::Q;
+        let mut next = match self.resume_ctx.take() {
+            Some(ctx) => Next::Out(Outcome::Done, ctx),
+            None => Next::Q,
+        };
         loop {
             next = match next {
                 Next::Q => {
@@ -177,7 +186,12 @@ impl Machine {
                     match word.q {
                         // Part of the step of the instruction that led here.
                         5 => self.primitive(word.symb, Ctx::Link)?,
-                        6 | 7 => return Err("routines in auxiliary storage are not implemented".to_string()),
+                        6 | 7 => {
+                            return Err(format!(
+                                "{} is the control word of a list structure in auxiliary storage, not an instruction",
+                                self.label(cia)
+                            ))
+                        }
                         3 => {
                             // A monitor point (section 15.1).
                             self.mem[H1 as usize].p |= TRACE | MONITOR;
@@ -330,6 +344,7 @@ impl Machine {
                         return Ok(());
                     }
                     Outcome::ContinueP => Next::P,
+                    Outcome::Restarted => return Ok(()),
                     Outcome::AscendMore => Next::Ascend,
                 },
             }

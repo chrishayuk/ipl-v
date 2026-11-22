@@ -18,6 +18,10 @@ Options:
   --cells <N>      total available space in cells (default 22000)
   --cycles <N>     stop after N interpretation cycles (default 100000000)
   --stats          report cycles, storage and the processes used
+  --tape <U>=<FILE>
+                   mount FILE as tape U, 1 to 10. A file that does not exist
+                   is a blank tape. A tape the program writes on is saved
+                   back to its file at the end of the run.
   -h, --help       show this help
 ";
 
@@ -27,6 +31,7 @@ fn main() -> ExitCode {
     let (mut cells, mut cycles) = (DEFAULT_CELLS, DEFAULT_CYCLES);
     let mut it = args.iter();
     let mut command = None;
+    let mut tapes: Vec<(u32, String)> = Vec::new();
     while let Some(a) = it.next() {
         match a.as_str() {
             "-h" | "--help" => {
@@ -37,6 +42,19 @@ fn main() -> ExitCode {
             "--no-trace" => trace = Some(false),
             "--list" => list = true,
             "--stats" => stats = true,
+            "--tape" => {
+                let spec = it.next().and_then(|v| {
+                    v.split_once('=')
+                        .map(|(u, f)| (u.parse::<u32>().ok(), f.to_string()))
+                });
+                match spec {
+                    Some((Some(u), f)) if (1..=10).contains(&u) && !f.is_empty() => tapes.push((u, f)),
+                    _ => {
+                        eprintln!("iplv: --tape needs a unit 1 to 10 and a file, as --tape 2=restart.tape");
+                        return ExitCode::from(2);
+                    }
+                }
+            }
             "--cells" | "--cycles" => {
                 let Some(v) = it.next().and_then(|v| v.parse::<u64>().ok()) else {
                     eprintln!("iplv: {} needs a number", a);
@@ -104,6 +122,22 @@ fn main() -> ExitCode {
     if list {
         m.listing = Some(String::new());
     }
+    for (u, f) in &tapes {
+        let tape = match std::fs::read_to_string(f) {
+            Ok(text) => iplv::tape::Tape::from_text(&text),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(iplv::tape::Tape::default()),
+            Err(e) => Err(e.to_string()),
+        };
+        match tape {
+            Ok(t) => {
+                m.tapes.insert(*u, t);
+            }
+            Err(e) => {
+                eprintln!("iplv: {}: {}", f, e);
+                return ExitCode::from(2);
+            }
+        }
+    }
     for f in &files {
         match slurp(f) {
             Ok(text) => m.read_deck(&text),
@@ -126,7 +160,9 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    m.start(start);
+    if let iplv::loader::Start::At(start) = start {
+        m.start(start);
+    }
     let mut code = ExitCode::SUCCESS;
     loop {
         // Run in slices so that output appears as it is printed.
@@ -145,6 +181,14 @@ fn main() -> ExitCode {
                 eprintln!("iplv: {}", e);
                 code = ExitCode::FAILURE;
                 break;
+            }
+        }
+    }
+    for (u, f) in &tapes {
+        if let Some(t) = m.tapes.get(u).filter(|t| t.written) {
+            if let Err(e) = std::fs::write(f, t.to_text()) {
+                eprintln!("iplv: {}: {}", f, e);
+                code = ExitCode::FAILURE;
             }
         }
     }

@@ -266,12 +266,14 @@ stays.
 | `J201` | ERASE routine (0) |  |
 | `J202` | Print a post mortem and continue |  |
 
-The manual also defines J103, J106, J107, J109, J140 to J146, J162,
-J167, J172 to J176 and J189, for blocks, auxiliary storage, tapes and a
-few other things. They are not implemented here, and stop a run that
-executes one. J105 and J108 are: since nothing is ever on auxiliary
-storage, J105 leaves (0) where it is and sets H5 -, and J108 always sets
-H5 -.
+The rest of the manual's processes are here too, each with an example
+in `examples/`: blocks and region control words (J103, J171 to J176),
+auxiliary storage (J105 to J109), tapes (J140 to J146, J167), save for
+restart (J166), the traps on H2 and H3, J162 and J189. A tape is a file
+given with `--tape`; one that is not given is a blank tape that lasts as
+long as the run. J141 reads the console, and there is none, so it always
+sets H5 -. The compressed and binary forms of cards, which W16 and W17
+choose, were each machine's own; only IPL standard form is here.
 
 ## Commands
 
@@ -283,6 +285,7 @@ iplv run DECK [CARDS...]   load the deck and run it; CARDS go behind it in the r
      --stats               report cycles, storage and the processes used
      --cells N             cells of available space (22000)
      --cycles N            stop after N cycles (100000000)
+     --tape U=FILE         mount FILE as tape U, 1 to 10; saved back if written
 iplv check DECK            say what is wrong with a deck, without running it
 iplv format DECK           print it in upper case, each symbol at the left of its field
 iplv lsp                   the language server, for an editor
@@ -292,6 +295,7 @@ iplv lsp                   the language server, for an editor
 
 The main README lists them. The ones a program can notice: a symbol may
 be indented in its field; a `9` by itself is the internal symbol 9; a
-regional cell that is erased is emptied and not put on available space;
+regional cell that is erased is emptied and not put on available space
+(only J171 puts unused regional cells there);
 and the random numbers of `J129` come from the multiplier of the IBM
 1620 system.

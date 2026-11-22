@@ -1,0 +1,43 @@
+TAPES: A LIST STRUCTURE THERE AND BACK  9
+L1 IS WRITTEN ON TAPE 1 BY J142, WITH AN1
+END OF FILE AFTER IT. THE TAPE IS       1
+REWOUND AND READ BACK BY J140, WHICH    1
+LOADS IT INTO NEW CELLS, AND THE COPY IS1
+PRINTED BY J150.                        1
+                                        2 K                10
+                                        2 L                10
+                                        2 P                10
+                                        5       00
+WRITE ON UNIT 1.                          P0    10K1
+                                                20W19
+READ FROM UNIT 1.                               10K1
+                                                20W18
+                                                10L1
+                                                40H0
+PRINT THE ORIGINAL,                               J150
+WRITE IT,                                         J142
+                                                  J145
+                                                10K1
+                                                  J143
+READ IT BACK,                                     J140
+H5- IF NOTHING WAS READ.                        700
+AND PRINT THE COPY.                               J150
+A SECOND READ MEETS THE END OF FILE,              J140
+SO H5- AND NOTHING IN H0.                       700     J8
+                                        5       01
+                                          K1    011
+                                          L1      0
+                                                  9-1
+                                                  K1
+                                                  9-2   0
+                                          9-1     0
+                                                  9-3
+                                                  9-4
+                                                  K1    0
+                                          9-2     0
+                                                  9-5
+                                                  J4    0
+                                          9-3   21ABC
+                                          9-4  -0142
+-.25 X 10^-29.                            9-5  -1125      -29
+                                        5         P0

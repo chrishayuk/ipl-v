@@ -63,10 +63,11 @@ impl Session {
             m.read_deck(input);
         }
         let error = match m.load() {
-            Ok(Some(start)) => {
+            Ok(Some(crate::loader::Start::At(start))) => {
                 m.start(start);
                 None
             }
+            Ok(Some(crate::loader::Start::Restart)) => None,
             Ok(None) => {
                 m.halted = true;
                 Some("the deck has no start card (TYPE 5 with a routine in SYMB)".to_string())
@@ -240,7 +241,7 @@ impl Session {
         format!(
             concat!(
                 "{{\"cycles\":{},\"h3\":{},\"level\":{},\"halted\":{},\"error\":{},",
-                "\"free\":{},\"low\":{},\"space\":{},\"brk\":{},\"top\":{},\"h5\":\"{}\",",
+                "\"free\":{},\"reserve\":[{}],\"low\":{},\"space\":{},\"brk\":{},\"top\":{},\"h5\":\"{}\",",
                 "\"cia\":{{\"a\":{},\"place\":\"{}\",\"line\":{},\"p\":{},\"q\":{},\"symb\":\"{}\",\"link\":\"{}\",\"comment\":\"{}\"}},",
                 "\"calls\":[{}],\"h0\":{},\"w\":[{}],\"regions\":[{}],\"cards\":{}}}"
             ),
@@ -253,6 +254,7 @@ impl Session {
                 None => "null".to_string(),
             },
             m.free_cells,
+            m.reserve.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(","),
             m.low_water,
             m.space(),
             m.brk(),

@@ -66,7 +66,13 @@ the output printed in that memorandum:
   and two missing commas), the effort figures, and the core addresses it
   prints for rejected subproblems;
 - "effort", which is the cycle count, comes to between 98.3 and 98.7 per
-  cent of the 1963 figure on every theorem.
+  cent of the 1963 figure on every theorem;
+- the deck saves for restart as it was meant to: its first routine, X9,
+  writes storage on tape 2 with J166 and loads on with J165, which meets
+  the card `RELOAD FROM TAPE 2` and restarts from that tape. Given only the
+  tape (`--tape 2=FILE`) and the cards from that card on, as a later run in
+  1963 would have been, it prints the same 745 lines in the same 865,503
+  cycles.
 
 | theorem | 1963 effort | here | | theorem | 1963 effort | here |
 |---|---|---|---|---|---|---|
@@ -85,8 +91,9 @@ the output printed in that memorandum:
 | \*2.14 | 181261 | 178532 | | | | |
 | \*2.15 | 206728 | 203429 | | | | |
 
-The whole run takes 865,503 cycles and never has fewer than 15,322 cells
-of available space left, out of 22,000. The remaining one and a half per
+The whole run takes 865,503 cycles and never has fewer than 15,312 cells
+of available space left, out of 22,000 (ten more are withheld for the
+trap on H2). The remaining one and a half per
 cent of effort is not explained. Measured over exactly the cycles the
 program counts (from `50 H3` in M3 to `10 H3` in M77), it is not:
 
@@ -176,7 +183,7 @@ A card is 80 columns. Columns 1 to 40 are comment.
 
 | columns | field | |
 |---|---|---|
-| 41 | TYPE | blank for a word; 1 comment, 2 region, 3 block, 5 header, 9 first card |
+| 41 | TYPE | blank for a word; 1 comment, 2 region, 3 block, 5 to 8 header, 9 first card |
 | 43-47 | NAME | the symbol that names this cell, if it needs a name |
 | 48 | SIGN | `+` or `-`: this word in a routine is data |
 | 49 | P | operation |
@@ -231,7 +238,7 @@ AND PRINT IT.                                     J155  0
 
 ## Examples
 
-`examples/` holds eleven decks, each with the output it must print in a
+`examples/` holds eighteen decks, each with the output it must print in a
 `.out` file:
 
 | deck | |
@@ -247,6 +254,12 @@ AND PRINT IT.                                     J155  0
 | `sentences` | random sentences from a grammar held as a list structure |
 | `sum` | reading cards from the reader |
 | `manual-f1` | the manual's first complete program, with its trace |
+| `trap-h3`, `trap-h2` | the traps on the cycle count and on available space running out |
+| `regions-and-blocks` | region origins and control words, Type-3 blocks, J171, J172, J201, loading into a block |
+| `blocks-on-tape` | J174 and J173, with J103 and J162 dumping the block |
+| `tape-list-structure` | a list structure written with J142 and read back with J140 |
+| `save-for-restart` | J166 and a restart card in one run, as in section 20 |
+| `auxiliary-storage` | filing, moving in, copying, erasing and compacting, with W35 and W36 |
 
 ## In the browser
 
@@ -305,10 +318,14 @@ space list H2, preserve and restore, lists and description lists.
 the interpretation cycle of section 3.15. `src/prims.rs` and `src/print.rs`
 are the basic processes.
 
-The state of a run is in the cells and nowhere else, with one exception:
+`src/tape.rs` is the tapes and the punch, `src/auxiliary.rs` the
+auxiliary stores, and `src/restart.rs` the storage image J166 writes.
+
+The state of a run is in the cells and nowhere else, with two exceptions:
 the processes that execute a routine and have work to do when it returns
-(J18, J100 to J102, and the monitor and trap actions) keep a note of that
-work outside storage. The hierarchy of routines in progress is the
+(J18, J100 to J103, and the monitor and trap actions) keep a note of that
+work outside storage; and structures filed in auxiliary storage are held
+there, as they were. J166 saves both. The hierarchy of routines in progress is the
 push-down list of H1, made of cells from H2, as the manual has it.
 
 ## What is different from the manual, and what is missing
@@ -321,8 +338,8 @@ source. The ones that matter:
   character in the leftmost column. The surviving transcriptions follow
   listings, which indent. And a `9` by itself is the internal symbol 9,
   which is how the Logic Theorist's table of characters uses it.
-- **A regional cell is never put on available space.** Erasing it sets it
-  empty. In 1964 it went on H2 with everything else.
+- **A regional cell is put on available space only by J171.** Erasing it
+  sets it empty. In 1964 it went on H2 with everything else.
 - **A regional symbol beyond its region gets a cell of its own**, with a
   warning. The original loader rejected it.
 - **J129's multiplier** is the one in Beyer's IBM 1620 system. The 704 and
@@ -334,13 +351,36 @@ source. The ones that matter:
 - **J180 sets the entry column 1W25 to 1.** The manual does not say so;
   the Logic Theorist needs it.
 
-Not implemented: auxiliary storage (J106, J107 and J109; Q = 6 and 7;
-header types 6 and 7 are loaded to main storage; J105 and J108 report
-that nothing is on auxiliary storage, which is true); reading and writing list
-structures and tapes (J140 to J146); blocks (J172 to J176) and block cards
-other than print lines; J162, J167, J189; the compressed and binary card
-forms; origins on region cards; the traps on H2 and H3 (J170 itself
-works). J171 and J201 do nothing, and J166 saves nothing.
+Everything in Part Two is implemented, with these choices where the
+manual leaves the matter to each machine's write-up:
+
+- **Card forms.** Only IPL standard form, one word to a card. The
+  compressed and binary forms (W16 and W17 = 1 or 2) are not described in
+  the manual, and a run that asks for one stops with a message saying so.
+- **Tapes** are files, given with `--tape U=FILE`, in card images with a
+  line for each record that is not a card (`%%IPLV EOF`, a block written by
+  J174, a storage image written by J166). Unit 0 is the card reader for
+  reading and the punch for writing; punched cards are printed.
+- **J142 writes a structure whose head is not regional with NAME `9-0`**,
+  so that J140 gives the copy a new cell. The manual says internal symbols
+  are written as addresses, and an address as NAME would load the copy on
+  top of the original.
+- **J162** prints the cell's name and P Q SYMB LINK, in octal if 1W43 is 0
+  and decimal otherwise. The formats were the machine system's.
+- **J166** saves storage, auxiliary storage and the interpreter's own
+  state, but not the tapes, as the manual says, and prints nothing (the
+  manual has it print the units in use). A restart tape is read from its
+  beginning.
+- **Routines in auxiliary storage** (Type-6 and Type-7 headers on routines)
+  are kept in main storage. The shared buffer saved main storage; the
+  manual's rules for auxiliary routines make the difference invisible to a
+  program that keeps them. H4 is not used. Data under those headers is
+  filed in auxiliary storage, as the manual says.
+- **W38 and W42 start as J0**, which here means the system's own test for
+  compacting. A program may put its own routine there.
+- **J141** has no console to read and always sets H5 -.
+- **J173 reads blocks from 1W19**, the write unit, as the text says, and
+  J176 spaces that unit too.
 
 ## Tests
 
@@ -355,6 +395,7 @@ cargo test
 | `tests/examples.rs` | every deck in `examples/` against its `.out` |
 | `tests/historical.rs` | the Logic Theorist, the Heuristic Coder and the sentence generator, if their decks are present |
 | `tests/tutorial.rs` | every deck in the tutorial and in `manual/` against the output printed under it |
+| `tests/systems.rs` | tapes, blocks, regions, auxiliary storage, restart and the loader's special cards |
 | `tests/check.rs`, `tests/lsp.rs` | the deck checker, and a conversation with the language server |
 | `web/browser-test.mjs` | the page, driven in headless Chrome |
 | `web/test.mjs` | the WebAssembly build: every example stepped and run, stops, the JSON the page draws from |

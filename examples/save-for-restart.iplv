@@ -1,0 +1,36 @@
+SAVE FOR RESTART, AND RESTART           9
+SECTION 20 OF THE MANUAL. X0 SAVES THE  1
+MACHINE ON TAPE 1 WITH J166, WHICH SETS 1
+H5 PLUS, AND THEN LOADS MORE CARDS WITH 1
+J165. THE NEXT CARD IS A RESTART CARD,  1
+TYPE 5 WITH P = 4, WHICH RELOADS STORAGE1
+FROM TAPE 1. INTERPRETATION GOES ON     1
+AFTER THE J166 AGAIN, NOW WITH H5 MINUS,1
+AND J165 THEN READS THE START CARD FOR  1
+P9.                                     1
+                                        2 K                10
+                                        2 P                10
+                                        2 T                10
+                                        2 X                10
+                                        5       00
+                                          X0    10K1
+SAVE ON UNIT 1.                                   J166
+H5- MEANS A RESTART.                            709-1
+                                                10T1    9-2
+                                          9-1   10T2
+                                          9-2     J154
+                                                  J157
+                                                  J155
+LOAD MORE CARDS.                                  J165  0
+                                          P9      J154
+                                                10T3
+                                                  J157
+                                                  J155  0
+                                        5       01
+                                          K1    011
+                                          T1    21SAVED
+                                          T2    21AGAIN
+                                          T3    21P9
+                                        5         X0
+RESTART FROM TAPE 1.                    5       401
+                                        5         P9

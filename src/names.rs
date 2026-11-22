@@ -167,12 +167,6 @@ fn fixed(n: u32) -> Option<&'static str> {
     })
 }
 
-/// Whether Jn does here what the manual says. The rest are defined by the
-/// manual but stop the run (or, for J171 and J201, do nothing).
-pub fn implemented(n: u32) -> bool {
-    !matches!(n, 103 | 106 | 107 | 109 | 140..=146 | 162 | 167 | 172..=176 | 189)
-}
-
 /// Whether Jn sets the test cell H5: the starred entries of the manual's
 /// list.
 pub fn sets_h5(n: u32) -> bool {
