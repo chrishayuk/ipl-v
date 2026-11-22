@@ -54,8 +54,9 @@ instruction interpreted, and one more for each primitive it executes.
 
 **Against a program of 1963.** Einar Stefferud's IPL-V version of the Logic
 Theorist of Newell, Shaw and Simon (RAND RM-3731, 1963) runs unmodified, in
-David Moews's transcription of the listing, and its output is compared with
-the output printed in that memorandum:
+the transcription of the listing by Rupert Lane and Jeff Shrager with David
+Moews's corrections, and its output is compared with the output printed in
+that memorandum, which Moews transcribed:
 
 - all 24 theorems of *Principia Mathematica* get the 1963 result (23
   proved; \*2.15 gives up at its effort limit), each by the same search:
@@ -108,6 +109,18 @@ program counts (from `50 H3` in M3 to `10 H3` in M77), it is not:
 It may be several basic processes that were IPL routines in the 1963
 system, each costing a little; these counts cannot say which.
 
+A system of the time does not settle it either. Moews runs the deck on Rob
+Storey's IBM 7094 emulator, under the IPL-V that comes with it, after four
+changes: a symbol that system rejects, the restart, the input (that IPL-V
+lacks the processes the deck reads it with), and the order of the inputs
+to `J11` in two places, which kept it from running there (his
+[notes](https://github.com/dmoews/ipl-v-logic-theorist/tree/main/7094)).
+In his output there (`7094/patched-logic-theorist.out`), effort on the 21
+theorems whose figure prints is between 98.1 and 119.8 per cent of 1963's,
+from theorem to theorem; three print as `000000`, which he notes. So the
+system of 1963 was not that one either, and its count of effort is not
+recovered by running a system of the period.
+
 **Against another implementation.** Herbert Simon's Heuristic Coder (a
 listing of 16 July 1961) and the 1962 IPL-V version of Yngve's sentence
 generator from Simon's papers, in Jeff Shrager's transcriptions, print what Shrager's Common
@@ -124,7 +137,10 @@ Theorist. Jeff Shrager's
 [Executable Archaeology](https://github.com/jeffshrager/ExecutableArchaeology)
 and David Moews's
 [ipl-v-logic-theorist](https://github.com/dmoews/ipl-v-logic-theorist) did
-both, and the transcriptions are theirs. What is different here is the
+both. The Logic Theorist deck was transcribed by Rupert Lane and Jeff
+Shrager and corrected by Moews, who also transcribed its 1963 output; the
+Heuristic Coder and the sentence generator are Shrager's transcriptions.
+What is different here is the
 storage model and the cycle count. Shrager reports effort about a third
 below the 1963 figures on his interpreter, with \*2.15 searching further
 than it did in 1963 before the limit stops it (48 subproblems for 31), and
