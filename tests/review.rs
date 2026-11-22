@@ -3,6 +3,7 @@
 //! says, and the comment gives the finding and the page.
 
 use iplv::machine::Machine;
+use iplv::word::float_text;
 use iplv::Stop;
 
 /// A card from its fields, in their columns: TYPE in 41, NAME from 43,
@@ -147,4 +148,13 @@ fn minus_zero_can_be_punched() {
         card("5", "", "", "P0", ""),
     ];
     assert_eq!(run(2000, &deck).unwrap().trim(), "-0");
+}
+
+/// Finding 5. Section 16.2, page 215: ".505135x10^5 entered as 505135 05
+/// (9 cols.); .14x10^-16 entered as 140000 -16 (10 cols.)".
+#[test]
+fn a_floating_point_number_keeps_the_blank_before_its_exponent() {
+    assert_eq!(float_text(0.505135e5), "505135 05");
+    assert_eq!(float_text(0.14e-16), "140000 -16");
+    assert_eq!(float_text(-0.33e-29), "-330000 -29");
 }

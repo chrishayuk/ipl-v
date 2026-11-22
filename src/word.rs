@@ -129,7 +129,9 @@ pub fn datum_text(d: Datum) -> String {
 }
 
 /// Section 16.2: "the entire number is entered, signed value followed by
-/// signed exponent", so .505135 x 10^5 is `505135 05`.
+/// signed exponent", so .505135 x 10^5 is `505135 05` (9 columns) and
+/// .14 x 10^-16 is `140000 -16` (10 columns): the blank between the two
+/// stays, and a minus sign is added in front of a negative exponent.
 pub fn float_text(f: f64) -> String {
     if f == 0.0 {
         return "000000 00".to_string();
@@ -141,10 +143,10 @@ pub fn float_text(f: f64) -> String {
         e += 1;
     }
     format!(
-        "{}{:06}{}{:02}",
+        "{}{:06} {}{:02}",
         if f < 0.0 { "-" } else { "" },
         m,
-        if e < 0 { "-" } else { " " },
+        if e < 0 { "-" } else { "" },
         e.abs()
     )
 }

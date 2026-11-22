@@ -84,14 +84,18 @@ OCTAL -7777777777.                        9-3  -3177777 77777
 
 ```output
 THIS IS A SENTENCE.
-     -33     -330000-29     -7777777777
+     -33     -330000 -29     -7777777777
 ```
 
 The floating point number is entered as the manual's section 16.2 says,
-"signed value followed by signed exponent": six digits of fraction, then
-the exponent. The manual is not clear about where a negative exponent's
-sign goes, and the scan of that page is hard to read; here it goes
-straight before the exponent.
+"signed value followed by signed exponent": six digits of fraction, a
+blank, then the exponent, with a minus sign in front of it if it is
+negative. The manual's own examples on page 215 are `505135 05` (9
+columns) and `140000 -16` (10 columns). An earlier version of this
+repository called the placing of a negative exponent's sign unclear and
+put the sign in place of the blank (`-330000-29`); the page is clear, and
+that was a misreading of it, found by the independent review
+([`docs/independent-review.md`](../docs/independent-review.md)).
 
 ## R95 to R97: reading
 
