@@ -1,0 +1,69 @@
+LIST STRUCTURES AND AVAILABLE SPACE     9
+X0 IS THE EXPRESSION OF SECTION         1
+2.10 OF THE MANUAL, (X1+X2*(X3-X4)),    1
+WITH A SUBLIST FOR EACH PARENTHESIS.    1
+IT IS PRINTED, COPIED AND ERASED.       1
+EACH TIME THE CELLS OF AVAILABLE        1
+SPACE ARE COUNTED ON H2: THE COPY       1
+TAKES FOURTEEN, AND ERASING IT          1
+GIVES ALL FOURTEEN BACK.                1
+                                        2 K                10
+                                        2 P                10
+                                        2 X                10
+                                        2 +                 1
+                                        2 -                 1
+                                        2 *                 1
+                                        5       00
+                                          P0    10X0
+PRINT THE LIST STRUCTURE X0.                      J150
+COUNT THE AVAILABLE SPACE.                        P2
+                                                10K2
+                                                10K1
+K1 IS THE COUNT AT THE START.                     J121
+                                                30H0
+                                                10X0
+COPY THE LIST STRUCTURE.                          J74
+K3 HOLDS THE NAME OF THE COPY.                  20K3
+                                                  P2
+HOW MANY CELLS DID IT TAKE.                       P1
+                                                11K3
+ERASE THE COPY.                                   J72
+                                                  P2
+HOW MANY ARE IN USE NOW.                          P1    0
+P1 PRINTS K1 LESS K2.                   1
+                                          P1    10K2
+                                                10K1
+                                                10K4
+K1 LESS K2, INTO K4.                              J111
+                                                  J154
+                                                  J157
+                                                  J155  0
+P2 COUNTS THE CELLS ON H2, THE          1
+AVAILABLE SPACE LIST, INTO K2.          1
+                                          P2    10H2
+A NEW CELL HOLDS THE COUNT.                       J126
+                                                40H0
+                                                10K2
+SET K2 IDENTICAL TO IT,                           J121
+                                                30H0
+AND ERASE IT.                                     J9    0
+                                        5       01
+                                          K1    010
+                                          K2    010
+                                          K3      0     0
+                                          K4    010
+                                          X0      0
+                                                  9-1   0
+                                          9-1     0
+                                                  X1
+                                                  +0
+                                                  9-2   0
+                                          9-2     0
+                                                  X2
+                                                  *0
+                                                  9-3   0
+                                          9-3     0
+                                                  X3
+                                                  -0
+                                                  X4    0
+                                        5         P0

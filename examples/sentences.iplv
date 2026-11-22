@@ -1,0 +1,135 @@
+RANDOM SENTENCES FROM A GRAMMAR         9
+THE GRAMMAR IS A LIST STRUCTURE. A      1
+SYMBOL THAT NAMES A DATA TERM IS A      1
+WORD. ANY OTHER SYMBOL NAMES A LIST     1
+OF ALTERNATIVES: ONE IS CHOSEN AT       1
+RANDOM, AND IF IT IS A LIST ITS         1
+MEMBERS ARE EXPANDED IN TURN.           1
+E1 IS RECURSIVE, AND GENERATES THE      1
+MEMBERS WITH ITSELF AS SUBPROCESS.      1
+                                        2 A                10
+                                        2 D                10
+                                        2 E                10
+                                        2 K                10
+                                        2 M                10
+                                        2 N                10
+                                        2 P                10
+                                        2 S                10
+                                        2 V                10
+                                        5       00
+                                          P0    10K9
+K9 STARTS THE RANDOM NUMBERS.                   20W10
+                                                10K8
+                                                  J120
+W0 COUNTS THE SENTENCES.                          J50
+                                          9-1     J154
+                                                10S0
+EXPAND A SENTENCE                                 E1
+AND PRINT IT.                                     J155
+                                                10K1
+                                                11W0
+                                                11W0
+ONE FEWER TO DO.                                  J111
+                                                  J117
+                                                709-1
+                                                11W0
+                                                  J9
+                                                  J30   0
+E1 EXPANDS THE SYMBOL (0).              1
+                                          E1    40H0
+DOES IT NAME A DATA TERM.                         J131
+                                                709-1
+IT IS A WORD.                                     E2    0
+IT IS A LIST OF ALTERNATIVES.             9-1   40H0
+COUNT THEM, IN A NEW CELL.                        J126
+W0 IS THE COUNT, W1 THE LIST.                     J51
+                                                11W0
+A RANDOM NUMBER BELOW THE COUNT                   J129
+                                                11W0
+                                                  J9
+REPLACES THE COUNT IN W0.                       60W0
+ADD 1 TO IT.                                      J125
+                                                11W1
+                                                  J6
+LOCATE THAT CELL OF THE LIST                      J200
+AND TAKE THE SYMBOL IN IT.                      52H0
+                                                40H0
+IS THE ALTERNATIVE A WORD.                        J131
+                                                709-2
+                                                  E2    9-3
+IT IS A LIST: EXPAND EACH MEMBER.         9-2   10E1
+                                                  J100
+                                          9-3   11W0
+ERASE THE RANDOM NUMBER.                          J9
+                                                  J31
+H5 + FOR THE GENERATOR.                           J4    0
+E2 ENTERS THE WORD (0) AND A SPACE.     1
+                                          E2      J157
+                                                10K1
+                                                  J161
+                                                  J4    0
+                                        5       01
+                                          K1    011
+SIX SENTENCES.                            K8    016
+                                          K9    011961
+A SENTENCE:                               S0      0
+                                                  9-1
+                                                  9-2   0
+A NOUN PHRASE AND A VERB PHRASE,          9-1     0
+                                                  N0
+                                                  V0    0
+OR TWO OF EACH.                           9-2     0
+                                                  N0
+                                                  V0
+                                                  9-3
+                                                  N0
+                                                  V0    0
+                                          9-3   21AND
+A NOUN PHRASE.                            N0      0
+                                                  9-1
+                                                  9-2   0
+                                          9-1     0
+                                                  D0
+                                                  M0    0
+                                          9-2     0
+                                                  D0
+                                                  A0
+                                                  M0    0
+A VERB PHRASE.                            V0      0
+                                                  9-1
+                                                  9-2
+                                                  9-3   0
+                                          9-1     0
+                                                  9-4
+                                                  N0    0
+                                          9-2     0
+                                                  9-5
+                                                  N0    0
+                                          9-3     0
+                                                  9-6
+                                                  N0    0
+                                          9-4   21MAKES
+                                          9-5   21READS
+                                          9-6   21FINDS
+                                          D0      0
+                                                  9-1
+                                                  9-2   0
+                                          9-1   21THE
+                                          9-2   21EVERY
+                                          A0      0
+                                                  9-1
+                                                  9-2
+                                                  9-3   0
+                                          9-1   21NEW
+                                          9-2   21EMPTY
+                                          9-3   21LOCAL
+                                          M0      0
+                                                  9-1
+                                                  9-2
+                                                  9-3
+                                                  9-4   0
+                                          9-1   21LIST
+                                          9-2   21CELL
+                                          9-3   21WORD
+                                          9-4   21NAME  0
+                                        5         P0

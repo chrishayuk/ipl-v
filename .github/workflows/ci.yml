@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown, wasm32-wasip1
+          components: rustfmt, clippy
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test (the machine, the manual's figures, the examples, the tutorial, manual/, the language server)
+        run: cargo test
+
+      - name: Browser page (the WebAssembly build, in node)
+        run: |
+          node web/build.mjs
+          node web/test.mjs
+
+      - name: Browser page (driven in headless Chrome)
+        run: CHROME=google-chrome node web/browser-test.mjs
+
+      - name: Visual Studio Code extension (grammar, language server, runner)
+        working-directory: editors/vscode
+        run: |
+          npm ci
+          npm run build
+          npm test

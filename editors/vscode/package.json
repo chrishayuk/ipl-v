@@ -1,0 +1,188 @@
+{
+  "name": "iplv-language",
+  "displayName": "IPL-V (1964)",
+  "description": "Card columns, a language server and run commands for IPL-V, the list-processing language of the first artificial intelligence programs.",
+  "version": "0.1.0",
+  "publisher": "chrishayuk",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Formatters",
+    "Linters"
+  ],
+  "keywords": [
+    "ipl-v",
+    "ipl",
+    "1964",
+    "list processing",
+    "history"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "languages": [
+      {
+        "id": "iplv",
+        "aliases": [
+          "IPL-V",
+          "iplv"
+        ],
+        "extensions": [
+          ".iplv"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "iplv",
+        "scopeName": "source.iplv",
+        "path": "./syntaxes/iplv.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "iplv",
+        "path": "./snippets/iplv.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[iplv]": {
+        "editor.rulers": [
+          40,
+          42,
+          47,
+          50,
+          55,
+          56,
+          61,
+          80
+        ],
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "editor.autoIndent": "none",
+        "editor.wordWrap": "off",
+        "editor.formatOnSave": true,
+        "editor.wordBasedSuggestions": "off",
+        "editor.quickSuggestions": {
+          "other": "off",
+          "comments": "off",
+          "strings": "off"
+        },
+        "editor.semanticHighlighting.enabled": true
+      }
+    },
+    "configuration": {
+      "title": "IPL-V",
+      "properties": {
+        "iplv.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an iplv program to use for the language server and for running decks. Leave empty to use the one built into the extension."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "iplv.run",
+        "title": "Run the Deck",
+        "category": "IPL-V",
+        "icon": "$(play)"
+      },
+      {
+        "command": "iplv.runTrace",
+        "title": "Run, Tracing Every Instruction",
+        "category": "IPL-V"
+      },
+      {
+        "command": "iplv.listing",
+        "title": "Run, with the Assembly Listing",
+        "category": "IPL-V"
+      },
+      {
+        "command": "iplv.nextField",
+        "title": "Go to the Next Field of the Card",
+        "category": "IPL-V"
+      },
+      {
+        "command": "iplv.previousField",
+        "title": "Go to the Previous Field of the Card",
+        "category": "IPL-V"
+      },
+      {
+        "command": "iplv.restart",
+        "title": "Restart Language Server",
+        "category": "IPL-V"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "iplv.run",
+          "when": "resourceLangId == iplv"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "iplv.run",
+          "when": "editorLangId == iplv"
+        },
+        {
+          "command": "iplv.runTrace",
+          "when": "editorLangId == iplv"
+        },
+        {
+          "command": "iplv.listing",
+          "when": "editorLangId == iplv"
+        },
+        {
+          "command": "iplv.nextField",
+          "when": "editorLangId == iplv"
+        },
+        {
+          "command": "iplv.previousField",
+          "when": "editorLangId == iplv"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "iplv.run",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && editorLangId == iplv"
+      },
+      {
+        "command": "iplv.nextField",
+        "key": "tab",
+        "when": "editorTextFocus && editorLangId == iplv && !editorReadonly && !suggestWidgetVisible && !inSnippetMode && !editorHasSelection && !inlineSuggestionVisible"
+      },
+      {
+        "command": "iplv.previousField",
+        "key": "shift+tab",
+        "when": "editorTextFocus && editorLangId == iplv && !editorReadonly && !suggestWidgetVisible && !inSnippetMode && !editorHasSelection"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/grammar.test.js && node test/server.test.js",
+    "test:vscode": "node test/run-vscode.js",
+    "package": "node build.mjs && vsce package --no-dependencies --allow-missing-repository"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.2.1",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.1.0",
+    "esbuild": "^0.25.0"
+  },
+  "private": true
+}

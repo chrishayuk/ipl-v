@@ -1,0 +1,63 @@
+THE TOWERS OF HANOI                     9
+R1 MOVES (0) DISCS FROM PEG (1) TO      1
+PEG (2) BY WAY OF PEG (3). IT CALLS     1
+ITSELF, SO ITS WORKING CELLS W0 TO      1
+W4 ARE PRESERVED ON ENTRY AND           1
+RESTORED ON EXIT.                       1
+                                        2 A                 1
+                                        2 B                 1
+                                        2 C                 1
+                                        2 K                10
+                                        2 N                10
+                                        2 P                10
+                                        2 R                10
+                                        2 T                10
+                                        5       00
+BY WAY OF B,                              P0    10B0
+TO C,                                           10C0
+FROM A,                                         10A0
+N0 DISCS.                                       10N0
+                                                  R1    0
+W0-W3 = DISCS, FROM, TO, VIA.             R1      J53
+                                                11W0
+NO DISCS.                                         J117
+                                                709-1
+THEN THERE IS NOTHING TO DO.                      J33   0
+                                          9-1   11W0
+COPY THE NUMBER OF DISCS,                         J120
+                                                40W4
+INTO W4,                                        20W4
+                                                10K1
+                                                11W4
+                                                11W4
+AND TAKE 1 FROM THE COPY.                         J111
+                                                30H0
+BY WAY OF THE PEG WE MOVE TO,                   11W2
+TO THE SPARE PEG,                               11W3
+FROM THE PEG WE MOVE FROM,                      11W1
+ONE DISC FEWER.                                 11W4
+                                                  R1
+PRINT THE MOVE.                                   J154
+                                                11W1
+                                                  J156
+                                                10T0
+                                                  J157
+                                                10K1
+                                                  J161
+                                                11W2
+                                                  J156
+                                                  J155
+BY WAY OF THE PEG WE MOVED FROM,                11W1
+TO THE PEG WE MOVE TO,                          11W2
+FROM THE SPARE PEG,                             11W3
+ONE DISC FEWER.                                 11W4
+                                                  R1
+                                                11W4
+ERASE THE COPY.                                   J9
+                                                30W4
+                                                  J33   0
+                                        5       01
+                                          K1    011
+                                          N0    013
+                                          T0    21 TO
+                                        5         P0

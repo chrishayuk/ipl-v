@@ -1,0 +1,228 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "IPL-V",
+  "scopeName": "source.iplv",
+  "patterns": [
+    {
+      "comment": "A comment card: everything but column 41 is comment.",
+      "match": "^(.{40})(1)(.*)$",
+      "captures": {
+        "1": {
+          "name": "comment.line.iplv"
+        },
+        "2": {
+          "name": "keyword.control.type.iplv"
+        },
+        "3": {
+          "name": "comment.line.iplv"
+        }
+      }
+    },
+    {
+      "comment": "The other type cards: region, block, header, first.",
+      "match": "^(.{40})([2-9])(.)?(.{0,5})(.)?(.{0,2})(.{0,5})(.)?(.{0,5})(.*)$",
+      "captures": {
+        "1": {
+          "name": "comment.line.iplv"
+        },
+        "2": {
+          "name": "keyword.control.type.iplv"
+        },
+        "4": {
+          "patterns": [
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "entity.name.function.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "6": {
+          "name": "constant.numeric.prefix.iplv"
+        },
+        "7": {
+          "patterns": [
+            {
+              "match": "J *[0-9]+",
+              "name": "support.function.process.iplv"
+            },
+            {
+              "match": "[HW] *[0-9]*",
+              "name": "support.variable.system.iplv"
+            },
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "variable.other.regional.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "9": {
+          "patterns": [
+            {
+              "match": "J *[0-9]+",
+              "name": "support.function.process.iplv"
+            },
+            {
+              "match": "[HW] *[0-9]*",
+              "name": "support.variable.system.iplv"
+            },
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "variable.other.regional.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "10": {
+          "name": "comment.line.identification.iplv"
+        }
+      }
+    },
+    {
+      "comment": "A data term: Q is 1 and P is the type. Only right in data, which the language server knows and this does not.",
+      "match": "^(.{40})([ 0])(.)(.{5})([+-])([ 0-3]1)(.{0,11})(.*)$",
+      "captures": {
+        "1": {
+          "name": "comment.line.iplv"
+        },
+        "4": {
+          "patterns": [
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "entity.name.function.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "5": {
+          "name": "keyword.operator.sign.iplv"
+        },
+        "6": {
+          "name": "storage.type.data.iplv"
+        },
+        "7": {
+          "name": "constant.other.data.iplv"
+        },
+        "8": {
+          "name": "comment.line.identification.iplv"
+        }
+      }
+    },
+    {
+      "comment": "A word: NAME, SIGN, P Q, SYMB, LINK.",
+      "match": "^(.{40})([ 0])(.)?(.{0,5})(.)?(.{0,2})(.{0,5})(.)?(.{0,5})(.*)$",
+      "captures": {
+        "1": {
+          "name": "comment.line.iplv"
+        },
+        "4": {
+          "patterns": [
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "entity.name.function.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "5": {
+          "name": "keyword.operator.sign.iplv"
+        },
+        "6": {
+          "name": "constant.numeric.prefix.iplv"
+        },
+        "7": {
+          "patterns": [
+            {
+              "match": "J *[0-9]+",
+              "name": "support.function.process.iplv"
+            },
+            {
+              "match": "[HW] *[0-9]*",
+              "name": "support.variable.system.iplv"
+            },
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "variable.other.regional.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "9": {
+          "patterns": [
+            {
+              "match": "J *[0-9]+",
+              "name": "support.function.process.iplv"
+            },
+            {
+              "match": "[HW] *[0-9]*",
+              "name": "support.variable.system.iplv"
+            },
+            {
+              "match": "9-?[0-9]+",
+              "name": "variable.other.local.iplv"
+            },
+            {
+              "match": "[^ 0-9][0-9]*",
+              "name": "variable.other.regional.iplv"
+            },
+            {
+              "match": "[0-9]+",
+              "name": "constant.numeric.symbol.iplv"
+            }
+          ]
+        },
+        "10": {
+          "name": "comment.line.identification.iplv"
+        }
+      }
+    },
+    {
+      "comment": "A card with nothing after column 40.",
+      "match": "^.{0,40}$",
+      "name": "comment.line.iplv"
+    }
+  ]
+}

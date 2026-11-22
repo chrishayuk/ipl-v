@@ -1,0 +1,4 @@
+target
+.DS_Store
+# scans, their text, and other people's transcriptions: see sources/README.md
+sources/*/

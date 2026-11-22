@@ -1,0 +1,249 @@
+//! What the symbols of the system mean: the basic processes and the cells
+//! with special functions, as the manual lists them at the end of Part Two.
+//! For hover text and listings; the interpreter does not use this.
+
+/// The basic process Jn in a line, or None if the manual defines none.
+pub fn process(n: u32) -> Option<String> {
+    let range = |k: u32, one: &str, many: &str| {
+        if k == 0 {
+            one.to_string()
+        } else {
+            many.replace('n', &k.to_string())
+        }
+    };
+    Some(match n {
+        20..=29 => format!(
+            "MOVE {} into {}",
+            range(n - 20, "(0)", "(0)-(n)"),
+            range(n - 20, "W0", "W0-Wn")
+        ),
+        30..=39 => format!("Restore {}", range(n - 30, "W0", "W0-Wn")),
+        40..=49 => format!("Preserve {}", range(n - 40, "W0", "W0-Wn")),
+        50..=59 => format!(
+            "Preserve {w}, then MOVE {} into {w}",
+            range(n - 50, "(0)", "(0)-(n)"),
+            w = range(n - 50, "W0", "W0-Wn")
+        ),
+        80 => "FIND the symbol in the head of list (0)".to_string(),
+        81..=89 => format!("FIND symbol {} on list (0)", n - 80),
+        90 => "Create an empty list".to_string(),
+        91..=99 => format!("Create a list of the {} symbols ({}) to (0)", n - 90, n - 91),
+        _ => fixed(n)?.to_string(),
+    })
+}
+
+fn fixed(n: u32) -> Option<&'static str> {
+    Some(match n {
+        0 => "No operation",
+        1 => "Execute (0) after restoring H0",
+        2 => "TEST (0) = (1)",
+        3 => "Set H5 -",
+        4 => "Set H5 +",
+        5 => "Reverse the sense of H5",
+        6 => "Reverse (0) and (1)",
+        7 => "Halt, proceed on GO",
+        8 => "Restore H0",
+        9 => "ERASE cell (0)",
+        10 => "FIND the value of attribute (0) of (1)",
+        11 => "Assign (1) as the value of attribute (0) of (2)",
+        12 => "Add (1) at the front of the value list of attribute (0) of (2)",
+        13 => "Add (1) at the end of the value list of attribute (0) of (2)",
+        14 => "ERASE attribute (0) of (1)",
+        15 => "ERASE all attributes of (0)",
+        16 => "FIND an attribute of (0) randomly",
+        17 => "Generator set-up: context (0), subprocess (1)",
+        18 => "Execute the subprocess of the generator",
+        19 => "Generator clean-up",
+        60 => "LOCATE the next symbol after cell (0)",
+        61 => "LOCATE the last symbol on list (0)",
+        62 => "LOCATE (0) on list (1) (first occurrence)",
+        63 => "INSERT (0) before the symbol in cell (1)",
+        64 => "INSERT (0) after the symbol in cell (1)",
+        65 => "INSERT (0) at the end of list (1)",
+        66 => "INSERT (0) at the end of list (1) if it is not on it",
+        67 => "Replace (1) by (0) on list (2) (first occurrence)",
+        68 => "DELETE the symbol in cell (0)",
+        69 => "DELETE (0) from list (1) (first occurrence)",
+        70 => "DELETE the last symbol from list (0)",
+        71 => "ERASE list (0)",
+        72 => "ERASE list structure (0)",
+        73 => "COPY list (0)",
+        74 => "COPY list structure (0)",
+        75 => "Divide the list after location (0); the name of the remainder is the output",
+        76 => "INSERT list (0) after cell (1), and locate its last symbol",
+        77 => "TEST if (0) is on list (1)",
+        78 => "TEST if list (0) is not empty",
+        79 => "TEST if cell (0) is not empty",
+        100 => "Generate the symbols on list (1) for subprocess (0)",
+        101 => "Generate the cells of list structure (1) for subprocess (0)",
+        102 => "Generate the cells of tree (1) for subprocess (0)",
+        103 => "Generate the cells of block (1) for subprocess (0)",
+        105 => "MOVE list structure (0) in from auxiliary storage",
+        106 => "File list structure (0) in fast-auxiliary storage",
+        107 => "File list structure (0) in slow-auxiliary storage",
+        108 => "TEST if list structure (0) is on auxiliary storage",
+        109 => "Compact the auxiliary data storage system (0)",
+        110 => "(1) + (2) into (0), leave (0)",
+        111 => "(1) - (2) into (0), leave (0)",
+        112 => "(1) x (2) into (0), leave (0)",
+        113 => "(1) / (2) into (0), leave (0)",
+        114 => "TEST if (0) = (1)",
+        115 => "TEST if (0) > (1)",
+        116 => "TEST if (0) < (1)",
+        117 => "TEST if (0) = 0",
+        118 => "TEST if (0) > 0",
+        119 => "TEST if (0) < 0",
+        120 => "COPY (0)",
+        121 => "Set (0) identical to (1), leave (0)",
+        122 => "Take the absolute value of (0), leave (0)",
+        123 => "Take the negative of (0), leave (0)",
+        124 => "Clear (0), leave (0)",
+        125 => "Tally 1 in (0), leave (0)",
+        126 => "Count list (0)",
+        127 => "TEST if the data type of (0) is that of (1)",
+        128 => "Translate (0) to the data type of (1), leave (0)",
+        129 => "Produce a random number between 0 and (0)",
+        130 => "TEST if (0) is a regional symbol",
+        131 => "TEST if (0) names a data term",
+        132 => "TEST if (0) is a local symbol",
+        133 => "TEST if list (0) has been marked processed",
+        134 => "TEST if (0) is an internal symbol",
+        136 => "Make (0) local, leave (0)",
+        137 => "Mark list (0) processed, leave (0)",
+        138 => "Make (0) internal, leave (0)",
+        140 => "Read a list structure",
+        141 => "Read a symbol from the console",
+        142 => "Write list structure (0)",
+        143 => "Rewind tape (0)",
+        144 => "Skip to the next tape file",
+        145 => "Write end-of-file",
+        146 => "Write end-of-set",
+        147 => "Mark routine (0) to trace",
+        148 => "Mark routine (0) to propagate trace",
+        149 => "Mark routine (0) not to trace",
+        150 => "Print list structure (0)",
+        151 => "Print list (0)",
+        152 => "Print symbol (0)",
+        153 => "Print data term (0) without name or type",
+        154 => "Clear the print line",
+        155 => "Print the line",
+        156 => "Enter symbol (0) left-justified",
+        157 => "Enter data term (0) left-justified",
+        158 => "Enter symbol (0) right-justified",
+        159 => "Enter data term (0) right-justified",
+        160 => "Tab to column (0)",
+        161 => "Increment the column by (0)",
+        162 => "Enter (0) according to format 1W43",
+        165 => "Load routines and data",
+        166 => "Save on unit (0) for restart",
+        167 => "Skip a list structure",
+        170 => "Trap on (0)",
+        171 => "Return unused regional cells to H2",
+        172 => "Make block (0) into a list",
+        173 => "Read into block (0)",
+        174 => "Write block (0)",
+        175 => "FIND the region control word of regional symbol (0)",
+        176 => "Space (0) blocks on unit 1W19",
+        180 => "Read a line",
+        181 => "Input a symbol from the line",
+        182 => "Input a data term from the line into (0)",
+        183 => "Set (0) to the next blank, leave (0)",
+        184 => "Set (0) to the next non-blank, leave (0)",
+        185 => "Set (1) to the next occurrence of character (0), leave (0)",
+        186 => "Input a character from the line",
+        189 => "Transfer a field to line (0)",
+        190 => "Input P of cell (0)",
+        191 => "Input Q of cell (0)",
+        192 => "Input SYMB of cell (0)",
+        193 => "Input LINK of cell (0)",
+        194 => "Set (1) to be P of cell (0)",
+        195 => "Set (1) to be Q of cell (0)",
+        196 => "Set (1) to be SYMB of cell (0)",
+        197 => "Set (1) to be LINK of cell (0)",
+        200 => "LOCATE the (0)th symbol on list (1)",
+        201 => "ERASE routine (0)",
+        202 => "Print a post mortem and continue",
+        _ => return None,
+    })
+}
+
+/// Whether Jn does here what the manual says. The rest are defined by the
+/// manual but stop the run (or, for J171 and J201, do nothing).
+pub fn implemented(n: u32) -> bool {
+    !matches!(n, 103 | 106 | 107 | 109 | 140..=146 | 162 | 167 | 172..=176 | 189)
+}
+
+/// Whether Jn sets the test cell H5: the starred entries of the manual's
+/// list.
+pub fn sets_h5(n: u32) -> bool {
+    matches!(
+        n,
+        2..=5 | 10 | 16 | 18 | 19 | 60..=62 | 68..=70 | 76..=89 | 100..=103 | 105 | 108 | 114..=119 | 127 | 130..=134
+            | 140 | 141 | 156..=159 | 162 | 166 | 167 | 173..=175 | 180..=186 | 189 | 200
+    )
+}
+
+/// The cells with special functions (section 4.2).
+pub fn cell(ch: u8, n: u32) -> Option<&'static str> {
+    Some(match (ch, n) {
+        (b'H', 0) => "the communication cell: inputs and outputs of routines",
+        (b'H', 1) => "the current instruction address cell",
+        (b'H', 2) => "the available space list",
+        (b'H', 3) => "the tally of interpretation cycles, an integer",
+        (b'H', 4) => "the current auxiliary routine cell",
+        (b'H', 5) => "the test cell: + or -",
+        (b'W', 0..=9) => "common working storage",
+        (b'W', 10) => "random number control cell",
+        (b'W', 11) => "remainder of integer division, an integer",
+        (b'W', 12) => "monitor start cell: the routine executed at a monitor point",
+        (b'W', 13) => "monitor end cell: the routine executed when a monitored routine ends",
+        (b'W', 14) => "external interrupt cell",
+        (b'W', 15) => "post mortem routine cell",
+        (b'W', 16) => "input mode cell",
+        (b'W', 17) => "output mode cell",
+        (b'W', 18) => "read unit cell",
+        (b'W', 19) => "write unit cell",
+        (b'W', 20) => "print unit cell",
+        (b'W', 21) => "print column cell: names the left margin",
+        (b'W', 22) => "print spacing cell",
+        (b'W', 23) => "post mortem list cell",
+        (b'W', 24) => "print line cell: names the current print or read line",
+        (b'W', 25) => "print entry column cell: names the column of the next entry",
+        (b'W', 26) => "error trap cell",
+        (b'W', 27) => "trap address cell",
+        (b'W', 28) => "trap symbol cell",
+        (b'W', 29) => "monitor point address cell",
+        (b'W', 30) => "field length cell: names the size of the field the line read processes take",
+        (b'W', 31) => "trace mode cell",
+        (b'W', 32) => "reserved available space cell",
+        (b'W', 33) => "cycle count for trap cell",
+        (b'W', 34) => "current available space cell",
+        (b'W', 35..=42) => "auxiliary storage cell",
+        (b'W', 43) => "format cell",
+        _ => return None,
+    })
+}
+
+pub const OPERATIONS: [&str; 8] = [
+    "Execute S",
+    "Input S: preserve H0, then put S in it",
+    "Output to S: put (0) in cell S, then restore H0",
+    "Restore S: pop it up",
+    "Preserve S: push it down",
+    "Replace (0) by S",
+    "Copy (0) in cell S",
+    "Branch to S if H5 is -",
+];
+
+pub const CARD_TYPES: [&str; 10] = [
+    "a word of a routine or of data",
+    "a comment card",
+    "a region card: NAME is the region, LINK its size in cells",
+    "a block reservation card",
+    "a listing card",
+    "a header card: Q even, routines follow; Q odd, data. With a symbol in SYMB it is the start card",
+    "a header card for fast-auxiliary storage (loaded to main storage here)",
+    "a header card for slow-auxiliary storage (loaded to main storage here)",
+    "an editing header: the set that follows is not loaded",
+    "the first card of a deck",
+];

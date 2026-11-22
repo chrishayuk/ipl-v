@@ -1,0 +1,45 @@
+LISTS AND A GENERATOR                   9
+L1 IS PRINTED, A REVERSED COPY OF       1
+IT IS MADE AND PRINTED, AND THE         1
+COPY IS ERASED. J100 GENERATES THE      1
+SYMBOLS OF A LIST FOR A SUBPROCESS,     1
+WHICH SAYS WITH H5 WHETHER TO GO ON.    1
+                                        2 K                10
+                                        2 L                10
+                                        2 P                10
+                                        2 S                10
+                                        5       00
+                                          P0    10L1
+PRINT L1.                                         P1
+CREATE AN EMPTY LIST                              J90
+AND KEEP ITS NAME IN W0.                          J50
+                                                10L1
+                                                109-1
+FOR EACH SYMBOL OF L1 DO 9-1.                     J100
+                                                11W0
+PRINT THE NEW LIST.                               P1
+                                                11W0
+ERASE IT.                                         J71
+                                                  J30   0
+THE SUBPROCESS: (0) IS A SYMBOL.          9-1   11W0
+                                                  J6
+INSERT IT AFTER THE HEAD OF 1W0.                  J64
+H5 + ASKS FOR THE NEXT SYMBOL.                    J4    0
+P1 PRINTS THE SYMBOLS OF LIST (0)       1
+ON ONE LINE.                            1
+                                          P1      J154
+                                                109-1
+                                                  J100
+                                                  J155  0
+ENTER THE SYMBOL,                         9-1     J156
+                                                10K1
+LEAVE A SPACE,                                    J161
+AND ASK FOR THE NEXT.                             J4    0
+                                        5       01
+                                          K1    011
+                                          L1      0
+                                                  S1
+                                                  S2
+                                                  S3
+                                                  S4    0
+                                        5         P0

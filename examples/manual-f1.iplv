@@ -1,0 +1,48 @@
+EXAMPLE RUN OF F1, FROM THE MANUAL      9
+IPL-V MANUAL, PART ONE, SECTION 2:      1
+THE PROGRAM OF FIG. 1 AND FIG. 2.       1
+                                        2 A                10
+                                        2 B                10
+                                        2 C                10
+                                        2 E                10
+                                        2 F                10
+                                        2 K                10
+                                        5       00
+E1---EXECUTIVE ROUTINE.                 1
+EXECUTE F1 WITH THE LIST K1             1
+AS INPUT AND PRINT THE                  1
+RESULTING OUTPUT LIST.                  1
+Q=3 SAYS TRACE THIS ROUTINE.            1
+                                          E1    13K1
+EXECUTE F1 AND                                    F1
+PRINT THE OUTPUT LIST.                            J151  0
+                                        5       00
+F1---PRODUCE AN OUTPUT LIST (0)         1
+CONTAINING ONLY ONE OCCURRENCE OF       1
+EACH DISTINCT SYMBOL ON THE INPUT       1
+LIST (0). THE ROUTINE F1 IS             1
+MARKED TO TRACE CONDITIONALLY WITH      1
+Q=4 IN ITS FIRST INSTRUCTION.           1
+CREATE AN EMPTY OUTPUT LIST.              F1    04J90
+PRESERVE W0.                                    40W0
+W0 HOLDS NAME OF OUTPUT LIST.                   20W0
+LOCATE NEXT CELL OF INPUT LIST.           9-1     J60
+GO TO 9-2 IF NO NEXT CELL.                      709-2
+INPUT THE SYMBOL IN THE CELL.                   12H0
+INPUT THE NAME OF THE OUTPUT LIST,              11W0
+REVERSE THEIR POSITION IN H0, AND                 J6
+ADD THE SYMBOL TO THE OUTPUT LIST                 J66   9-1
+IF IT IS NOT ALREADY ON IT---           1
+RETURN TO 9-1 IN EITHER CASE.           1
+PUT THE NAME OF THE OUTPUT LIST           9-2   51W0
+IN H0 AND RESTORE W0 BEFORE                     30W0    0
+QUITTING.                               1
+                                        5       01
+THE LIST K1.                              K1      0
+                                                  B1
+                                                  C1
+                                                  B1
+                                                  A1
+                                                  A1
+                                                  B1    0
+                                        5         E1

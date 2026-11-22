@@ -1,0 +1,45 @@
+{
+  "Deck": {
+    "prefix": "deck",
+    "description": "A whole small deck: first card, a region, a routine and the start card",
+    "body": [
+      "A NEW DECK                              9",
+      "                                        2 P                10",
+      "                                        5       00",
+      "                                          P0      J154",
+      "                                                10${2:T0}",
+      "                                                  J157",
+      "                                                  J155  0",
+      "                                        5       01",
+      "                                          T0    21${3:HELLO}",
+      "                                        5         P0",
+      "$0"
+    ]
+  },
+  "Region card": {
+    "prefix": "region",
+    "description": "TYPE 2: a region and its size in cells",
+    "body": "                                        2 ${1:A}                ${2:10}"
+  },
+  "Routines header": {
+    "prefix": [
+      "routines",
+      "header"
+    ],
+    "description": "TYPE 5, Q 0: routines follow",
+    "body": "                                        5       00"
+  },
+  "Data header": {
+    "prefix": [
+      "data",
+      "header"
+    ],
+    "description": "TYPE 5, Q 1: data follows",
+    "body": "                                        5       01"
+  },
+  "Start card": {
+    "prefix": "start",
+    "description": "TYPE 5 with a routine in SYMB: loading ends and it is executed",
+    "body": "                                        5         ${1:P0}"
+  }
+}

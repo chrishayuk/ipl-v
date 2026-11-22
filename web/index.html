@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPL-V: the IPL computer</title>
+<style>
+  :root {
+    --bg: #f2f0eb; --fg: #0b0b0b; --rule: #b8b6b1; --accent: #b5651d; --err: #a3432f;
+    --free: #e6e3db; --region: #b9c6d6; --loaded: #7f8791; --made: #1c1c1c; --data: #3f8a5a;
+    --h0: #c96a14; --h1: #8a3fa0; --wcell: #2f7fb8; --flash: #f2c230; --now: #d6283a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0b0b; --fg: #fafaf8; --rule: #4a4946; --accent: #e08a3c; --err: #e07a63;
+      --free: #1b1b1a; --region: #33414f; --loaded: #6d737b; --made: #f1efe9; --data: #5fc084;
+      --h0: #f08c2e; --h1: #c77be0; --wcell: #5aa9e6; --flash: #ffd84a; --now: #ff5468;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font: 500 2.2rem/1.1 Georgia, serif; margin: 0 0 8px; }
+  h2 { font: 12px ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 0 0 6px; font-weight: 400; }
+  p.lede { max-width: 72ch; opacity: .8; margin: 0 0 20px; }
+  a { color: inherit; }
+  code, pre, select, button, input, textarea, .mono { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: inherit; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 14px; }
+  select, button, input[type=text] { padding: 5px 11px; background: var(--bg); border: 1px solid var(--fg); border-radius: 0; }
+  button { cursor: pointer; }
+  button.primary { background: var(--fg); color: var(--bg); }
+  button:disabled { opacity: .35; cursor: default; }
+  label.inline { display: inline-flex; gap: 6px; align-items: center; font: 12px ui-monospace, monospace; opacity: .8; }
+  .grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 18px; margin-bottom: 18px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .panel { border: 1px solid var(--rule); min-width: 0; }
+  .panel > h2 { padding: 8px 12px 0; }
+  .scroll { overflow: auto; }
+
+  /* The deck, as a listing. */
+  #listing { height: 430px; padding: 4px 0; white-space: pre; }
+  #listing .row { display: flex; }
+  #listing .row.now { background: color-mix(in srgb, var(--now) 22%, transparent); }
+  #listing .bp { width: 18px; flex: none; text-align: center; cursor: pointer; color: var(--now); user-select: none; }
+  #listing .bp:hover::before { content: "○"; opacity: .5; }
+  #listing .row.on .bp::before { content: "●"; opacity: 1; }
+  #listing .addr { width: 52px; flex: none; text-align: right; padding-right: 10px; opacity: .45; }
+  #listing .card.note { opacity: .55; }
+  #ruler { padding: 6px 0 0 70px; opacity: .4; white-space: pre; border-bottom: 1px solid var(--rule); }
+  #edit { width: 100%; height: 430px; padding: 8px 12px; border: 0; background: transparent; white-space: pre; resize: vertical; display: none; }
+  #input { width: 100%; height: 62px; padding: 8px 12px; border: 0; border-top: 1px solid var(--rule); background: transparent; white-space: pre; resize: vertical; }
+  .editing #listing, .editing #ruler { display: none; }
+  .editing #edit { display: block; }
+
+  /* The cells with system functions. */
+  #machine { padding: 8px 12px 12px; height: 566px; }
+  #now { font: 15px/1.4 ui-monospace, monospace; margin: 0 0 2px; }
+  #now b { color: var(--now); font-weight: 600; }
+  #means { margin: 0 0 10px; font-size: 14px; opacity: .85; min-height: 3.6em; }
+  .facts { display: grid; grid-template-columns: repeat(4, auto); gap: 2px 14px; justify-content: start; margin-bottom: 8px; }
+  .facts span { opacity: .55; }
+  #space { height: 8px; border: 1px solid var(--rule); margin: 2px 0 12px; position: relative; }
+  #space i { position: absolute; inset: 0 auto 0 0; background: var(--made); opacity: .75; }
+  #space u { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--now); }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+  td { padding: 1px 10px 1px 0; vertical-align: top; white-space: nowrap; }
+  td.k { opacity: .55; width: 1%; }
+  td.sym { cursor: pointer; }
+  td.sym:hover { color: var(--accent); }
+  td.t { opacity: .7; }
+  .empty { opacity: .45; }
+
+  /* The map of storage. */
+  #map { display: block; width: 100%; image-rendering: pixelated; cursor: crosshair; border-top: 1px solid var(--rule); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 4px 12px 8px; font: 12px ui-monospace, monospace; }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
+  #where { padding: 0 12px 8px; min-height: 1.9em; white-space: pre; opacity: .85; }
+
+  /* A list structure. */
+  #structure { padding: 4px 12px 12px; min-height: 240px; max-height: 620px; }
+  #structure svg { display: block; }
+  #structure text { font: 12px ui-monospace, monospace; fill: var(--fg); }
+  #structure .cell rect { fill: var(--bg); stroke: var(--fg); }
+  #structure .cell.head rect { stroke-width: 2.2; }
+  #structure .cell.local rect { stroke: var(--h1); }
+  #structure .cell.local text.s { fill: var(--h1); }
+  #structure .cell.data rect, #structure .cell.named rect { stroke: var(--data); }
+  #structure .cell.changed rect { fill: color-mix(in srgb, var(--flash) 45%, var(--bg)); }
+  #structure .cell { cursor: pointer; }
+  #structure .small { font-size: 10px; opacity: .6; }
+  #structure .wire { stroke: var(--fg); fill: none; }
+  #structure .sub { stroke: var(--h1); fill: none; opacity: .55; }
+  #structure .name { font-weight: 600; }
+  #printed, #trace { margin: 0; padding: 8px 12px 12px; height: 260px; white-space: pre; }
+  .err { color: var(--err); white-space: pre-wrap; }
+  #status { font: 12px ui-monospace, monospace; opacity: .7; }
+  footer { margin-top: 26px; font-size: 14px; opacity: .75; max-width: 80ch; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The IPL computer</h1>
+  <p class="lede">IPL-V was the language of the first artificial intelligence programs, and its 1964 manual
+    defines a machine: cells that each hold a word <code>P Q SYMB LINK</code>, a list of the cells not in use,
+    and a cycle that interprets lists of instructions. This is that machine. Step a program and watch it take
+    cells from available space, link them into lists and give them back.</p>
+
+  <div class="bar">
+    <select id="examples" aria-label="Example decks"></select>
+    <button id="open">Open a deck…</button>
+    <input id="file" type="file" multiple hidden>
+    <button id="load" class="primary">Load</button>
+    <button id="step" title="Interpret one instruction">Step</button>
+    <button id="over" title="Go on to this routine's next instruction">Over</button>
+    <button id="out" title="Go on until this routine has finished">Out</button>
+    <button id="run">Run</button>
+    <label class="inline">speed <input id="speed" type="range" min="0" max="10" value="3"></label>
+    <label class="inline"><input id="editing" type="checkbox"> edit the deck</label>
+    <span id="status"></span>
+  </div>
+
+  <div class="grid">
+    <section class="panel" id="deck">
+      <h2>The deck: one card to a word. ● stops there.</h2>
+      <div id="ruler" class="mono"></div>
+      <div id="listing" class="scroll mono"></div>
+      <textarea id="edit" spellcheck="false" wrap="off" aria-label="The deck"></textarea>
+      <textarea id="input" spellcheck="false" wrap="off" aria-label="Cards for the program to read" placeholder="cards for the program to read"></textarea>
+    </section>
+    <section class="panel">
+      <h2>The interpreter</h2>
+      <div id="machine" class="scroll mono"></div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-bottom:18px">
+    <h2><span id="maptitle">Storage</span>
+      <label class="inline" style="margin-left:8px"><input id="whole" type="checkbox"> all of it</label></h2>
+    <canvas id="map" width="320" height="69"></canvas>
+    <div class="legend" id="legend"></div>
+    <div id="where" class="mono"></div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>A list structure
+        <input id="show" type="text" size="9" placeholder="(0)" aria-label="Symbol to show" style="margin-left:8px;text-transform:none">
+        <span id="showing" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div id="structure" class="scroll"></div>
+    </section>
+    <section class="panel">
+      <h2>Printed</h2>
+      <pre id="printed" class="scroll"></pre>
+      <h2>Traced <label class="inline" style="margin-left:8px"><input id="traceall" type="checkbox"> every instruction</label></h2>
+      <pre id="trace" class="scroll"></pre>
+    </section>
+  </div>
+
+  <footer>
+    The same Rust program as the <code>iplv</code> command, compiled to WebAssembly; storage is drawn from the
+    module's own memory. The Logic Theorist of 1963 runs on it too, but its deck is not ours to publish:
+    “Open a deck” takes a deck file and, with it, any files of cards for the program to read.
+    Name a symbol above the drawing (<code>K1</code>, <code>W0</code>, <code>1350</code>) to keep it in view, or
+    leave the box empty to follow the symbol in H0.
+  </footer>
+</main>
+
+<script type="module">
+import { Iplv, H0, H1, H2, W0 } from "./iplv.js";
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+
+// The basic processes, as the manual's list of them has it.
+const J = {
+  0: "no operation", 1: "execute (0) after restoring H0", 2: "TEST (0) = (1)", 3: "set H5 −", 4: "set H5 +",
+  5: "reverse the sense of H5", 6: "reverse (0) and (1)", 7: "halt", 8: "restore H0", 9: "ERASE cell (0)",
+  10: "FIND the value of attribute (0) of (1)", 11: "assign (1) as the value of attribute (0) of (2)",
+  12: "add (1) at the front of the value list of attribute (0) of (2)",
+  13: "add (1) at the end of the value list of attribute (0) of (2)", 14: "ERASE attribute (0) of (1)",
+  15: "ERASE all attributes of (0)", 16: "FIND an attribute of (0) at random",
+  17: "generator set-up: context (0), subprocess (1)", 18: "execute the subprocess of the generator",
+  19: "generator clean-up", 60: "LOCATE the next symbol after cell (0)", 61: "LOCATE the last symbol on list (0)",
+  62: "LOCATE (0) on list (1)", 63: "INSERT (0) before the symbol in cell (1)",
+  64: "INSERT (0) after the symbol in cell (1)", 65: "INSERT (0) at the end of list (1)",
+  66: "INSERT (0) at the end of list (1) if it is not on it", 67: "replace (1) by (0) on list (2)",
+  68: "DELETE the symbol in cell (0)", 69: "DELETE (0) from list (1)", 70: "DELETE the last symbol from list (0)",
+  71: "ERASE list (0)", 72: "ERASE list structure (0)", 73: "COPY list (0)", 74: "COPY list structure (0)",
+  75: "divide the list after location (0); the remainder is the output", 76: "INSERT list (0) after cell (1), and locate its last symbol",
+  77: "TEST if (0) is on list (1)", 78: "TEST if list (0) is not empty", 79: "TEST if cell (0) is not empty",
+  100: "generate the symbols on list (1) for subprocess (0)", 101: "generate the cells of list structure (1) for subprocess (0)",
+  102: "generate the cells of tree (1) for subprocess (0)", 110: "(1) + (2) into (0)", 111: "(1) − (2) into (0)",
+  112: "(1) × (2) into (0)", 113: "(1) ÷ (2) into (0)", 114: "TEST if (0) = (1)", 115: "TEST if (0) > (1)",
+  116: "TEST if (0) < (1)", 117: "TEST if (0) = 0", 118: "TEST if (0) > 0", 119: "TEST if (0) < 0", 120: "COPY (0)",
+  121: "set (0) identical to (1)", 122: "take the absolute value of (0)", 123: "take the negative of (0)",
+  124: "clear (0)", 125: "tally 1 in (0)", 126: "count list (0)", 127: "TEST if the data type of (0) is that of (1)",
+  128: "translate (0) to the data type of (1)", 129: "produce a random number between 0 and (0)",
+  130: "TEST if (0) is a regional symbol", 131: "TEST if (0) names a data term", 132: "TEST if (0) is a local symbol",
+  133: "TEST if list (0) has been marked processed", 134: "TEST if (0) is an internal symbol", 136: "make (0) local",
+  137: "mark list (0) processed", 138: "make (0) internal", 147: "mark routine (0) to trace",
+  148: "mark routine (0) to propagate trace", 149: "mark routine (0) not to trace", 150: "print list structure (0)",
+  151: "print list (0)", 152: "print symbol (0)", 153: "print data term (0) without name or type",
+  154: "clear the print line", 155: "print the line", 156: "enter symbol (0) left-justified",
+  157: "enter data term (0) left-justified", 158: "enter symbol (0) right-justified",
+  159: "enter data term (0) right-justified", 160: "tab to column (0)", 161: "increment the column by (0)",
+  165: "load routines and data", 166: "save for restart", 170: "trap on (0)", 180: "read a line",
+  181: "input a symbol from the line", 182: "input a data term from the line into (0)", 183: "set (0) to the next blank",
+  184: "set (0) to the next non-blank", 185: "set (1) to the next occurrence of character (0)",
+  186: "input a character from the line", 190: "input P of cell (0)", 191: "input Q of cell (0)",
+  192: "input SYMB of cell (0)", 193: "input LINK of cell (0)", 194: "set (1) to be P of cell (0)",
+  195: "set (1) to be Q of cell (0)", 196: "set (1) to be SYMB of cell (0)", 197: "set (1) to be LINK of cell (0)",
+  200: "LOCATE the (0)th symbol on list (1)", 201: "ERASE routine (0)", 202: "print a post mortem",
+};
+const process = (name) => {
+  const n = Number(name.slice(1));
+  if (name[0] !== "J" || Number.isNaN(n)) return "";
+  if (n >= 20 && n < 60) {
+    const k = n % 10, to = k ? `W0–W${k}` : "W0", from = k ? `(0)–(${k})` : "(0)";
+    return [`move ${from} into ${to}`, `restore ${to}`, `preserve ${to}`, `preserve ${to}, then move ${from} into ${to}`][Math.floor(n / 10) - 2];
+  }
+  if (n >= 80 && n < 90) return n === 80 ? "FIND the symbol in the head of list (0)" : `FIND symbol ${n - 80} on list (0)`;
+  if (n >= 90 && n < 100) return n === 90 ? "create an empty list" : `create a list of the ${n - 90} symbols (${n - 91}) to (0)`;
+  return J[n] || "";
+};
+const P = ["Execute S.", "Input S: push H0 down and put S in it.", "Output to S: put (0) in cell S and pop H0 up.",
+  "Restore S: pop it up.", "Preserve S: push it down.", "Replace (0) by S.", "Copy (0) in cell S.",
+  "Branch to S if H5 is −; otherwise go on."];
+function meaning(cia) {
+  if (cia.q === 5) return `${cia.symb}: ${process(cia.symb)}. It is the last process of its list.`;
+  const s = [`S is ${cia.symb}.`, `S is the symbol in cell ${cia.symb}.`, `S is the symbol in the cell named in cell ${cia.symb}.`,
+    `S is ${cia.symb}. A monitor point: this routine is traced.`, `S is ${cia.symb}. Traced if the routine that executes it is.`][cia.q] || "";
+  let text = `${P[cia.p]} ${s}`;
+  if (cia.p === 0 && cia.q !== 1 && cia.q !== 2 && process(cia.symb)) text += ` ${cia.symb}: ${process(cia.symb)}.`;
+  return text;
+}
+
+let wasm, machine, examples = [], lineOf = new Map(), addrOf = new Map(), rows = [];
+let running = false, timer = 0, previous = null, changed = new Set(), loaded = new Set(), lastState = null;
+const breaks = new Set();
+
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function rgb(name) {
+  const c = document.createElement("canvas").getContext("2d");
+  c.fillStyle = css(name);
+  c.fillRect(0, 0, 1, 1);
+  return c.getImageData(0, 0, 1, 1).data;
+}
+const KINDS = [["free", "available space"], ["region", "a region"], ["loaded", "loaded from cards"], ["made", "made while running"],
+  ["data", "a data term"], ["h0", "under H0"], ["h1", "under H1: routines in progress"], ["wcell", "under W0–W9"],
+  ["flash", "just changed"], ["now", "the instruction"]];
+let palette = [];
+function paint() {
+  palette = KINDS.map(([k]) => rgb(`--${k}`));
+  $("legend").replaceChildren(...KINDS.map(([k, text]) => {
+    const s = el("span");
+    const i = el("i");
+    i.style.background = `var(--${k})`;
+    s.append(i, text);
+    return s;
+  }));
+}
+
+function load() {
+  stop();
+  const deck = $("edit").value.toUpperCase();
+  machine.load(deck, $("input").value.toUpperCase());
+  machine.trace($("traceall").checked ? 1 : 0);
+  $("printed").textContent = "";
+  $("trace").textContent = "";
+  const warned = machine.warnings();
+  if (warned) $("printed").append(el("span", "err", warned));
+  lineOf = new Map();
+  addrOf = new Map();
+  for (const [line, a] of machine.lines()) {
+    lineOf.set(a, line);
+    addrOf.set(line, a);
+  }
+  loaded = new Set(lineOf.keys());
+  breaks.clear();
+  previous = null;
+  extent = 0;
+  changed = new Set();
+  const cards = deck.split("\n");
+  if (cards.at(-1) === "") cards.pop();
+  rows = cards.map((card, i) => {
+    const row = el("div", "row");
+    const a = addrOf.get(i + 1);
+    const bp = el("span", "bp");
+    if (a !== undefined) bp.onclick = () => {
+      const on = !breaks.has(a);
+      on ? breaks.add(a) : breaks.delete(a);
+      machine.setBreak(a, on);
+      row.classList.toggle("on", on);
+    };
+    row.append(bp, el("span", "addr", a === undefined ? "" : String(a)), el("span", a === undefined ? "card note" : "card", card || " "));
+    return row;
+  });
+  $("listing").replaceChildren(...rows);
+  $("editing").checked = false;
+  $("deck").classList.remove("editing");
+  render(true);
+}
+
+function advance(n, mode) {
+  const why = machine.advance(n, mode);
+  const out = machine.output(), traced = machine.traced();
+  if (out) $("printed").append(out), $("printed").scrollTop = 1e9;
+  if (traced) {
+    const t = $("trace");
+    t.textContent = (t.textContent + traced).slice(-60000);
+    t.scrollTop = 1e9;
+  }
+  return why;
+}
+
+const SPEEDS = [[1, 700], [1, 300], [1, 120], [1, 40], [3, 16], [20, 16], [150, 16], [1000, 16], [6000, 16], [30000, 16], [200000, 16]];
+function tick() {
+  const [n] = SPEEDS[$("speed").value];
+  const why = advance(n, 0);
+  render(false);
+  if (why === "done") timer = setTimeout(tick, SPEEDS[$("speed").value][1]);
+  else stop();
+}
+function stop() {
+  running = false;
+  clearTimeout(timer);
+  $("run").textContent = "Run";
+  if (machine && lastState) render(true);
+}
+function go() {
+  if (running) return stop();
+  running = true;
+  $("run").textContent = "Stop";
+  tick();
+}
+
+function row(table, ...cells) {
+  const tr = el("tr");
+  tr.append(...cells);
+  table.append(tr);
+}
+
+function symbolCell(text, a) {
+  const td = el("td", "sym", text);
+  td.title = "show this as a list structure";
+  td.onclick = () => {
+    $("show").value = text;
+    render(true);
+  };
+  return td;
+}
+
+function renderMachine(s) {
+  const box = $("machine");
+  const now = el("p");
+  now.id = "now";
+  const means = el("p");
+  means.id = "means";
+  if (s.error) {
+    now.append(el("b", "", "Stopped."));
+    means.append(el("span", "err", s.error));
+  } else if (s.halted) {
+    now.append(el("b", "", "Halted."));
+    means.textContent = "H1 is empty: the routine the start card named has finished.";
+  } else {
+    now.append(el("b", "", s.cia.place), `   ${s.cia.q === 5 ? "" : `${s.cia.p}${s.cia.q} `}${s.cia.symb}   ${s.cia.link === "0" && s.cia.q !== 5 ? "then end" : ""}`);
+    means.textContent = meaning(s.cia) + (s.cia.comment ? `  — “${s.cia.comment}”` : "");
+  }
+  const facts = el("div", "facts");
+  for (const [k, v] of [["H5", s.h5], ["level", s.level], ["H3", s.h3.toLocaleString()], ["cards to read", s.cards]]) facts.append(el("span", "", k), el("b", "", String(v)));
+  const used = s.space - s.free;
+  const bar = el("div");
+  bar.id = "space";
+  const fill = el("i"), low = el("u");
+  fill.style.width = `${(100 * used) / s.space}%`;
+  low.style.left = `${(100 * (s.space - s.low)) / s.space}%`;
+  bar.append(fill, low);
+  bar.title = `${used} cells in use; ${s.space - s.low} at the most`;
+
+  const h0 = el("table");
+  s.h0.items.forEach((item, i) => {
+    const tr = el("tr");
+    tr.append(el("td", "k", `(${i})`), symbolCell(item.name, item.a), el("td", "t", item.text));
+    h0.append(tr);
+  });
+  if (s.h0.depth > s.h0.items.length) row(h0, el("td", "k", "…"), el("td", "t", `${s.h0.depth - s.h0.items.length} more`));
+
+  const w = el("table");
+  s.w.forEach((cell, i) => {
+    if (cell.depth === 1 && cell.items[0].a === 0) return;
+    const tr = el("tr");
+    tr.append(el("td", "k", `W${i}`), symbolCell(cell.items[0].name, cell.items[0].a), el("td", "t", cell.items[0].text),
+      el("td", "t", cell.depth > 1 ? `over ${cell.items.slice(1).map((x) => x.name).join(", ")}${cell.depth > cell.items.length ? ", …" : ""}` : ""));
+    w.append(tr);
+  });
+  if (!w.rows.length) row(w, el("td", "empty", "W0–W9 are empty"));
+
+  const calls = el("table");
+  s.calls.slice(0, 40).forEach((c, i) => {
+    const tr = el("tr");
+    const place = el("td", "sym", c.place);
+    place.onclick = () => rows[c.line - 1]?.scrollIntoView({ block: "center" });
+    tr.append(el("td", "k", String(s.level - i)), place, el("td", "t", c.native ? "for a basic process" : ""));
+    calls.append(tr);
+  });
+  box.replaceChildren(now, means, facts,
+    el("h2", "", `available space: ${s.free.toLocaleString()} of ${s.space.toLocaleString()} cells`), bar,
+    el("h2", "", "H0, the communication cell"), h0, el("h2", "", "working cells"), w,
+    el("h2", "", "H1: routines in progress"), calls);
+}
+
+let shown = -1;
+function highlight(s, scroll) {
+  if (shown >= 0) rows[shown]?.classList.remove("now");
+  shown = s.halted ? -1 : s.cia.line - 1;
+  // A basic process executed as a LINK has no card: show who executed it.
+  if (shown < 0 && !s.halted) shown = (s.calls.find((c) => c.line)?.line ?? 0) - 1;
+  const row = rows[shown];
+  if (!row) return;
+  row.classList.add("now");
+  if (scroll) {
+    const list = $("listing");
+    const top = row.offsetTop - list.offsetTop;
+    if (top < list.scrollTop + 20 || top > list.scrollTop + list.clientHeight - 40) list.scrollTop = top - list.clientHeight / 2;
+  }
+}
+
+let COLS = 100, extent = 0;
+function renderMap(s) {
+  const words = machine.words();
+  const top = s.top;
+  const kind = new Uint8Array(top).fill(3);
+  for (let a = 0; a < Math.min(top, s.brk); a++) kind[a] = 1;
+  for (const a of loaded) if (a < top) kind[a] = 2;
+  for (let c = words.link(H2), n = 0; c !== 0 && n < words.length; c = words.link(c), n++) if (c < top) kind[c] = 0;
+  for (let a = s.brk; a < top; a++) if (kind[a] === 3 && words.q(a) === 1 && !loaded.has(a)) kind[a] = 4;
+  const under = (cell, k) => {
+    for (let c = words.link(cell), n = 0; c !== 0 && n < top; c = words.link(c), n++) if (c < top) kind[c] = k;
+  };
+  under(H0, 5);
+  under(H1, 6);
+  for (let i = 0; i < 10; i++) under(W0 + i, 7);
+  // What changed since the last picture.
+  const bytes = words.bytes;
+  changed = new Set();
+  if (previous && previous.length === bytes.length) {
+    for (let a = 64; a < top; a++) {
+      const o = a * 12;
+      if (bytes[o] !== previous[o] || bytes[o + 1] !== previous[o + 1] || bytes[o + 4] !== previous[o + 4] || bytes[o + 5] !== previous[o + 5] ||
+        bytes[o + 6] !== previous[o + 6] || bytes[o + 8] !== previous[o + 8] || bytes[o + 9] !== previous[o + 9] || bytes[o + 10] !== previous[o + 10]) changed.add(a);
+    }
+  }
+  previous = bytes.slice();
+  // A change that is only a cell moving along the available space list is not shown.
+  for (const a of changed) if (kind[a] !== 0) kind[a] = 8;
+  if (!s.halted && s.cia.a < top) kind[s.cia.a] = 9;
+
+  // Unless all of storage is asked for, the picture stops a little above
+  // the highest cell that has been in use, and never shrinks during a run.
+  for (let a = top - 1; a > extent; a--) if (kind[a] !== 0) extent = a;
+  const whole = $("whole").checked;
+  const shownTo = whole ? top : Math.min(top, Math.max(400, extent + 1));
+  COLS = shownTo <= 2000 ? 100 : shownTo <= 8000 ? 200 : 320;
+  const canvas = $("map");
+  const height = Math.ceil(shownTo / COLS);
+  if (canvas.height !== height || canvas.width !== COLS) (canvas.width = COLS), (canvas.height = height);
+  $("maptitle").textContent = `Storage: cells 0 to ${(height * COLS - 1).toLocaleString()} of ${top.toLocaleString()}, ${COLS} to a row`;
+  const g = canvas.getContext("2d");
+  const image = g.createImageData(COLS, height);
+  image.data.fill(0);
+  for (let a = 0; a < Math.min(top, height * COLS); a++) {
+    const c = palette[kind[a]];
+    image.data.set(c, a * 4);
+  }
+  g.putImageData(image, 0, 0);
+}
+
+function renderStructure(s) {
+  const named = $("show").value.trim();
+  let root = named ? machine.resolve(named) : s.h0.items[0].a;
+  const box = $("structure");
+  if (named && root < 0) {
+    $("showing").textContent = "";
+    box.replaceChildren(el("p", "empty", `${named.toUpperCase()} is not a symbol in use.`));
+    return;
+  }
+  const t = machine.structure(root, 260);
+  $("showing").textContent = named ? "" : `following (0), which is ${s.h0.items[0].name}`;
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  const make = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const [W, Hc, GAP, LEFT] = [70, 38, 20, 64];
+  const width = Math.max(320, box.clientWidth - 24);
+  const per = Math.max(2, Math.floor((width - LEFT) / (W + GAP)));
+  let y = 8;
+  const heads = new Map(), wants = [];
+  const cellsLayer = make("g", {}), wires = make("g", {});
+  for (const list of t.lists) {
+    heads.set(list.a, [LEFT, y]);
+    cellsLayer.append(make("text", { x: 0, y: y + 16, class: "name" }, list.name));
+    cellsLayer.append(make("text", { x: 0, y: y + 30, class: "small" }, String(list.a)));
+    list.cells.forEach((c, i) => {
+      const [col, line] = [i % per, Math.floor(i / per)];
+      const [x, cy] = [LEFT + col * (W + GAP), y + line * (Hc + 18)];
+      const g = make("g", { class: `cell ${i === 0 ? "head" : ""} ${c.kind} ${c.data && c.kind !== "data" ? "named" : ""} ${changed.has(c.a) ? "changed" : ""}` });
+      g.append(make("rect", { x, y: cy, width: W, height: Hc }));
+      const label = c.kind === "data" ? c.data : c.kind === "empty" ? (i === 0 ? "" : "0") : c.name;
+      g.append(make("text", { x: x + 6, y: cy + 15, class: "s" }, label.length > 9 ? label.slice(0, 8) + "…" : label));
+      g.append(make("text", { x: x + 6, y: cy + 30, class: "small" }, c.kind === "data" ? `data ${c.p}${c.q}` : c.data ? `“${c.data}”` : String(c.a)));
+      const title = make("title", {}, `cell ${c.a}: ${c.kind === "data" ? `${c.p}${c.q} ${c.data}` : `${c.p}${c.q} ${c.name} ${c.l}`}`);
+      g.append(title);
+      if (c.kind !== "data" && c.kind !== "empty") g.onclick = () => {
+        $("show").value = c.kind === "regional" ? c.name : String(c.s);
+        render(true);
+      };
+      cellsLayer.append(g);
+      if (c.kind === "local") wants.push([x + W / 2, cy + Hc, c.s]);
+      // The LINK to the next cell.
+      const last = i === list.cells.length - 1;
+      if (!last && col < per - 1) wires.append(make("path", { class: "wire", d: `M${x + W},${cy + Hc / 2} h${GAP - 5} m-5,-4 l5,4 l-5,4` }));
+      else if (!last) wires.append(make("path", { class: "wire", d: `M${x + W},${cy + Hc / 2} h8 v${Hc / 2 + 9} H${LEFT - 10} v${Hc / 2 + 9} h5 m-5,-4 l5,4 l-5,4` }));
+      else if (list.end !== "data") cellsLayer.append(make("text", { x: x + W + 6, y: cy + Hc / 2 + 4, class: "small" },
+        { 0: "0", cell: "a termination cell", more: "… and more", loop: "↺ the list runs into itself" }[list.end]));
+    });
+    y += Math.ceil(list.cells.length / per) * (Hc + 18) + 14;
+  }
+  for (const [x, cy, to] of wants) {
+    const head = heads.get(to);
+    if (head) wires.append(make("path", { class: "sub", d: `M${x},${cy} C${x},${cy + 22} ${head[0] + 20},${head[1] - 26} ${head[0] + 20},${head[1]}` }));
+  }
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", y);
+  svg.append(wires, cellsLayer);
+  box.replaceChildren(svg);
+}
+
+function render(full) {
+  const s = machine.state();
+  lastState = s;
+  renderMap(s);
+  highlight(s, true);
+  // At speed the panels are redrawn a few times a second, the map every time.
+  if (full || !running || $("speed").value < 7 || (render.count = (render.count || 0) + 1) % 8 === 0) {
+    renderMachine(s);
+    renderStructure(s);
+  }
+  $("status").textContent = s.error ? "stopped on an error" : s.halted ? `halted after ${s.cycles.toLocaleString()} cycles` : `${s.cycles.toLocaleString()} cycles`;
+  for (const id of ["step", "over", "out", "run"]) $(id).disabled = s.halted;
+}
+
+$("load").onclick = load;
+$("step").onclick = () => (stop(), advance(1, 0), render(true));
+$("over").onclick = () => (stop(), advance(5_000_000, 1), render(true));
+$("out").onclick = () => (stop(), advance(5_000_000, 2), render(true));
+$("run").onclick = go;
+$("editing").onchange = () => $("deck").classList.toggle("editing", $("editing").checked);
+$("traceall").onchange = () => machine.trace($("traceall").checked ? 1 : 0);
+$("show").oninput = () => render(true);
+$("whole").onchange = () => render(true);
+$("examples").onchange = () => {
+  const e = examples[$("examples").value];
+  $("edit").value = e.deck;
+  $("input").value = e.input;
+  $("show").value = "";
+  load();
+};
+$("open").onclick = () => $("file").click();
+$("file").onchange = async () => {
+  const texts = await Promise.all([...$("file").files].map((f) => f.text()));
+  if (!texts.length) return;
+  $("edit").value = texts[0];
+  $("input").value = texts.slice(1).join("");
+  $("show").value = "";
+  load();
+};
+$("map").onmousemove = (event) => {
+  const box = $("map").getBoundingClientRect();
+  const x = Math.floor(((event.clientX - box.left) / box.width) * COLS);
+  const y = Math.floor(((event.clientY - box.top) / box.height) * $("map").height);
+  const a = y * COLS + x;
+  $("where").textContent = lastState && a < lastState.top ? `cell ${a}   ${machine.describe(a)}` : "";
+  $("map").dataset.cell = a;
+};
+$("map").onclick = () => {
+  $("show").value = $("map").dataset.cell;
+  render(true);
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => (paint(), render(true)));
+addEventListener("resize", () => lastState && renderStructure(lastState));
+
+$("ruler").textContent = "comments".padEnd(40) + "T NAME ±PQSYMB  LINK";
+paint();
+wasm = await WebAssembly.compileStreaming(fetch("iplv.wasm"));
+machine = await Iplv.create(wasm);
+examples = await (await fetch("examples.json")).json();
+// Our examples, then the programs of the manual's Part One.
+const groups = [["Examples", (e) => e.expected === undefined], ["The manual's programs (Part One)", (e) => e.expected !== undefined]];
+$("examples").replaceChildren(...groups.map(([label, which]) => {
+  const g = document.createElement("optgroup");
+  g.label = label;
+  g.append(...examples.map((e, i) => [e, i]).filter(([e]) => which(e)).map(([e, i]) => {
+    const o = el("option", "", `${e.name}: ${e.title.toLowerCase()}`);
+    o.value = i;
+    return o;
+  }));
+  return g;
+}));
+// ?deck=hanoi&steps=120&show=W0 opens a deck part of the way through.
+const asked = new URLSearchParams(location.search);
+const wanted = examples.findIndex((e) => e.name === asked.get("deck"));
+if (wanted >= 0) $("examples").value = wanted;
+$("examples").onchange();
+if (asked.get("show")) $("show").value = asked.get("show");
+if (Number(asked.get("steps")) > 0) advance(Math.min(Number(asked.get("steps")) - 1, 5_000_000), 0), render(true), advance(1, 0);
+render(true);
+</script>
+</body>
+</html>

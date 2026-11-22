@@ -1,0 +1,21 @@
+[package]
+name = "iplv"
+version = "0.1.0"
+edition = "2021"
+description = "IPL-V (Newell, Shaw, Simon, Tonge and others, 1957-64): the list-processing language of the first AI programs, implemented as a cell machine from the 1964 manual"
+license = "Apache-2.0"
+
+[lib]
+name = "iplv"
+path = "src/lib.rs"
+# cdylib is for the browser: cargo build --target wasm32-unknown-unknown
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "iplv"
+path = "src/main.rs"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3

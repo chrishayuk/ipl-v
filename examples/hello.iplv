@@ -1,0 +1,21 @@
+HELLO, WORLD                            9
+A PRINT LINE IS CLEARED, THREE          1
+ALPHANUMERIC DATA TERMS OF FIVE         1
+CHARACTERS EACH ARE ENTERED IN IT,      1
+AND IT IS PRINTED.                      1
+                                        2 P                10
+                                        2 T                10
+                                        5       00
+CLEAR THE PRINT LINE.                     P0      J154
+INPUT THE NAME OF 'HELLO'                       10T0
+AND ENTER IT AT THE LEFT.                         J157
+                                                10T1
+                                                  J157
+                                                10T2
+                                                  J157
+PRINT THE LINE.                                   J155  0
+                                        5       01
+                                          T0    21HELLO
+                                          T1    21 WORL
+                                          T2    21D
+                                        5         P0

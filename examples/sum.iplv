@@ -1,0 +1,27 @@
+READING CARDS                           9
+THE CARDS BEHIND THE START CARD ARE     1
+THE PROGRAM'S TO READ. J180 READS       1
+ONE INTO A LINE; J182 TAKES A           1
+NUMBER FROM COLUMNS 1 TO 5 OF IT.       1
+THE NUMBERS ARE ADDED UP.               1
+                                        2 P                10
+                                        2 T                10
+                                        2 X                10
+                                        5       00
+READ A CARD.                              P0      J180
+NO MORE CARDS.                                  709-2
+                                                10X0
+COLUMNS 1-5, AS AN INTEGER, TO X0.                J182
+THE FIELD WAS BLANK.                            709-1
+                                                10T0
+                                                10T0
+T0 PLUS X0, INTO T0.                              J110
+                                          9-1   30H0    P0
+                                          9-2     J154
+                                                10T0
+                                                  J157
+                                                  J155  0
+                                        5       01
+                                          T0    010
+                                          X0    010
+                                        5         P0

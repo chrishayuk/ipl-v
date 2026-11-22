@@ -1,0 +1,105 @@
+DESCRIPTION LISTS                       9
+WHAT A SYMBOL MEANS IS WHAT IS          1
+SAID OF IT. G1 IS DESCRIBED BY TWO      1
+ATTRIBUTES: N0, ITS NAME, AND C0,       1
+ITS COLOUR. THE COLOUR IS A SYMBOL      1
+THAT HAS A NAME OF ITS OWN. THE         1
+DESCRIPTION CAN BE ASKED ABOUT AND      1
+CHANGED WHILE THE PROGRAM RUNS.         1
+                                        2 C                10
+                                        2 G                10
+                                        2 K                10
+                                        2 N                10
+                                        2 P                10
+                                        2 S                10
+                                        2 T                10
+                                        2 V                10
+                                        5       00
+                                          P0    10G1
+SAY WHAT COLOUR G1 IS.                            P2
+                                                10G1
+                                                10V2
+                                                10C0
+MAKE V2 THE COLOUR OF G1.                         J11
+                                                10G1
+                                                  P2
+S1 HAS A NAME AND NO COLOUR.                    10S1
+                                                  P2
+                                                10S1
+                                                10V3
+                                                10C0
+NOW IT HAS ONE.                                   J11
+                                                10S1
+                                                  P2
+                                                10G1
+                                                10C0
+ERASE THE COLOUR OF G1.                           J14
+                                                10G1
+                                                  P2
+                                                10S1
+PRINT S1 AS A LIST STRUCTURE.                     J150  0
+P1 ENTERS THE NAME OF (0).              1
+                                          P1    10N0
+FIND THE VALUE OF N0 OF (0).                      J10
+NO NAME: REMOVE (0) AND QUIT.                   70J8
+                                                  J157  0
+P2 PRINTS A LINE SAYING WHAT            1
+COLOUR (0) IS, IF IT HAS ONE.           1
+                                          P2      J50
+                                                  J154
+                                                11W0
+                                                  P1
+                                                11W0
+                                                10C0
+FIND THE COLOUR OF 1W0.                           J10
+                                                709-1
+IT HAS ONE.                                     10T0
+                                                  J157
+                                                10K1
+                                                  J161
+                                                  P1    9-2
+IT HAS NONE.                              9-1   10T1
+                                                  J157
+                                                10T2
+                                                  J157
+                                                10T3
+                                                  J157
+                                                10T4
+                                                  J157
+                                          9-2     J155
+                                                  J30   0
+                                        5       01
+                                          K1    011
+                                          T0    21 IS
+                                          T1    21 HAS
+                                          T2    21 NO
+                                          T3    21 COLO
+                                          T4    21UR
+G1, DESCRIBED BY 9-0.                     G1      9-0   0
+                                          9-0     0
+ITS NAME                                          N0
+IS A DATA TERM.                                   9-1
+ITS COLOUR                                        C0
+IS V1.                                            V1    0
+                                          9-1   21GRASS
+S1, WITH A NAME ONLY.                     S1      9-0   0
+                                          9-0     0
+                                                  N0
+                                                  9-1   0
+                                          9-1   21SKY
+                                          V1      9-0   0
+                                          9-0     0
+                                                  N0
+                                                  9-1   0
+                                          9-1   21GREEN
+                                          V2      9-0   0
+                                          9-0     0
+                                                  N0
+                                                  9-1   0
+                                          9-1   21BROWN
+                                          V3      9-0   0
+                                          9-0     0
+                                                  N0
+                                                  9-1   0
+                                          9-1   21BLUE
+                                        5         P0

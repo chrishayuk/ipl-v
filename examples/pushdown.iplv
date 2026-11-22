@@ -1,0 +1,32 @@
+PRESERVE AND RESTORE                    9
+SECTION 1.15 OF THE MANUAL, STEP BY     1
+STEP: EVERY STORAGE CELL IS THE TOP     1
+OF A PUSH-DOWN LIST. J151 PRINTS        1
+THE CELL AND THE LIST UNDER IT.         1
+                                        2 B                10
+                                        2 G                10
+                                        2 P                10
+                                        2 S                10
+                                        2 Y                10
+                                        5       00
+Y3 CONTAINS S5.                           P0    10Y3
+                                                  J151
+PRESERVE Y3.                                    40Y3
+                                                10B1
+PUT B1 INTO Y3.                                 20Y3
+                                                10Y3
+                                                  J151
+PRESERVE IT AGAIN.                              40Y3
+                                                10G3
+PUT G3 INTO Y3.                                 20Y3
+                                                10Y3
+                                                  J151
+RESTORE Y3.                                     30Y3
+                                                10Y3
+                                                  J151
+RESTORE IT AGAIN.                               30Y3
+                                                10Y3
+Y3 IS AS IT BEGAN.                                J151  0
+                                        5       01
+                                          Y3      S5    0
+                                        5         P0

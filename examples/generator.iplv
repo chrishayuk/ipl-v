@@ -1,0 +1,57 @@
+A GENERATOR WRITTEN IN IPL              9
+G1 GENERATES THE INTEGERS FROM 1 TO     1
+(1) FOR THE SUBPROCESS (0). IT USES     1
+W0 AND W1, AND SO DOES THE ROUTINE      1
+THAT CALLS IT: J17, J18 AND J19         1
+KEEP THE TWO CONTEXTS APART             1
+(SECTION 7 OF THE MANUAL). HERE THE     1
+SUBPROCESS ADDS UP THE SQUARES.         1
+                                        2 G                10
+                                        2 K                10
+                                        2 N                10
+                                        2 P                10
+                                        2 T                10
+                                        2 X                10
+                                        5       00
+                                          P0    10T0
+W0 NAMES THE TOTAL.                               J50
+UP TO N0,                                       10N0
+FOR THE SUBPROCESS 9-1.                         109-1
+                                                  G1
+                                                  J154
+                                                11W0
+ENTER THE TOTAL                                   J157
+AND PRINT IT.                                     J155
+                                                  J30   0
+THE SUBPROCESS: (0) IS THE INTEGER.       9-1   40H0
+                                                10X0
+ITS SQUARE, INTO X0.                              J112
+W0 IS THE CALLER'S W0 HERE.                     11W0
+                                                11W0
+ADD IT TO THE TOTAL.                              J110
+                                                30H0
+H5 + ASKS FOR THE NEXT INTEGER.                   J4    0
+THE GENERATOR.                          1
+IT USES W0 AND W1.                        G1    10W1
+SET UP: (0) IS W1, (1) THE SUBPROCESS.            J17
+W0 NAMES THE LIMIT.                             20W0
+                                                10K0
+                                                  J120
+W1 NAMES A COUNTER, A COPY OF 0.                20W1
+                                          9-1   11W0
+                                                11W1
+COUNT 1.                                          J125
+IS THE COUNTER PAST THE LIMIT.                    J115
+IF NOT, 9-2.                                    709-2
+                                          9-3   11W1
+ERASE THE COUNTER                                 J9
+AND CLEAN UP. H5 IS THE LAST H5.                  J19   0
+                                          9-2   11W1
+EXECUTE THE SUBPROCESS.                           J18
+STOP IF IT SAID -, ELSE GO ON.                  709-3   9-1
+                                        5       01
+                                          K0    010
+                                          N0    0110
+                                          T0    010
+                                          X0    010
+                                        5         P0

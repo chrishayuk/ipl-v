@@ -1,0 +1,30 @@
+FACTORIAL                               9
+10 FACTORIAL BY REPEATED                1
+MULTIPLICATION. THE ARITHMETIC          1
+PROCESSES TAKE THE NAME OF THE          1
+RESULT AS (0) AND LEAVE IT THERE.       1
+                                        2 F                10
+                                        2 K                10
+                                        2 N                10
+                                        2 P                10
+                                        5       00
+                                          P0      J154
+                                          9-1   10N0
+                                                10F0
+                                                10F0
+F0 TIMES N0 INTO F0.                              J112
+REMOVE THE NAME F0.                             30H0
+                                                10K1
+                                                10N0
+                                                10N0
+N0 MINUS 1 INTO N0.                               J111
+IS N0 ZERO.                                       J117
+IF NOT, MULTIPLY AGAIN.                         709-1
+                                                10F0
+ENTER THE RESULT                                  J157
+AND PRINT IT.                                     J155  0
+                                        5       01
+                                          F0    011
+                                          K1    011
+                                          N0    0110
+                                        5         P0
