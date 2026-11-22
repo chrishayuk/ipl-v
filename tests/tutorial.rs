@@ -84,6 +84,12 @@ fn every_program_from_the_manual_prints_what_its_chapter_says() {
     check_chapters("manual", 3, 8);
 }
 
+/// The decks in the notes in docs/.
+#[test]
+fn every_program_in_the_notes_prints_what_the_note_says() {
+    check_chapters("docs", 1, 1);
+}
+
 fn check_chapters(folder: &str, chapters: usize, programs: usize) {
     let dir = root().join(folder);
     let bless = std::env::var("IPLV_BLESS").is_ok_and(|v| !v.is_empty());

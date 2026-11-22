@@ -382,6 +382,13 @@ manual leaves the matter to each machine's write-up:
 - **J173 reads blocks from 1W19**, the write unit, as the text says, and
   J176 spaces that unit too.
 
+## IPL-V and LARQL
+
+[`docs/ipl-v-and-larql.md`](docs/ipl-v-and-larql.md) puts IPL-V's description
+lists next to [LARQL](https://github.com/chrishayuk/larql)'s edges,
+operation by operation, without assuming that the shared words mean the
+same thing. Its deck is run by the tests.
+
 ## Tests
 
 ```bash
@@ -394,7 +401,7 @@ cargo test
 | `tests/processes.rs` | the basic processes against their definitions in Part Two |
 | `tests/examples.rs` | every deck in `examples/` against its `.out` |
 | `tests/historical.rs` | the Logic Theorist, the Heuristic Coder and the sentence generator, if their decks are present |
-| `tests/tutorial.rs` | every deck in the tutorial and in `manual/` against the output printed under it |
+| `tests/tutorial.rs` | every deck in the tutorial, in `manual/` and in `docs/` against the output printed under it |
 | `tests/systems.rs` | tapes, blocks, regions, auxiliary storage, restart and the loader's special cards |
 | `tests/check.rs`, `tests/lsp.rs` | the deck checker, and a conversation with the language server |
 | `web/browser-test.mjs` | the page, driven in headless Chrome |
