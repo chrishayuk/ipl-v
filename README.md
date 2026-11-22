@@ -86,11 +86,20 @@ the output printed in that memorandum:
 | \*2.15 | 206728 | 203429 | | | | |
 
 The whole run takes 865,503 cycles and never has fewer than 15,322 cells
-of available space left, out of 22,000. The remaining one and a half per cent of effort is not
-explained. The likeliest cause is that some basic processes were IPL
-routines in the IBM 7090 system, as the manual says some were, and so cost
-more cycles than a primitive; the counts here do not fit any one or two of
-them.
+of available space left, out of 22,000. The remaining one and a half per
+cent of effort is not explained. Measured over exactly the cycles the
+program counts (from `50 H3` in M3 to `10 H3` in M77), it is not:
+
+- a cycle more for each routine executed, each return, each branch
+  taken, or each basic process reached through a LINK: none of these is
+  in proportion to it;
+- a fixed number of extra cycles for any one or two basic processes: the
+  best such fit is still 40 cycles out on some theorems;
+- J100 written in IPL, as the manual codes it on page 75: with that in
+  place of the built-in J100, effort is 105 to 110 per cent of 1963's.
+
+It may be several basic processes that were IPL routines in the 1963
+system, each costing a little; these counts cannot say which.
 
 **Against another implementation.** Herbert Simon's Heuristic Coder (a
 listing of 16 July 1961) and the 1962 IPL-V version of Yngve's sentence
