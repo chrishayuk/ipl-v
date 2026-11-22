@@ -1,0 +1,31 @@
+TRAP ON THE CYCLE COUNT                 9
+W33 HOLDS 100, AND W26 SAYS THAT THE    1
+TRAP ON H3 IS TO EXECUTE R1. P0 COUNTS  1
+FOR EVER; WHEN H3, THE COUNT OF         1
+INTERPRETATION CYCLES, REACHES 100, R1  1
+IS EXECUTED AS IF P0 HAD EXECUTED IT.   1
+                                        2 K                10
+                                        2 P                10
+                                        2 R                10
+                                        2 T                10
+                                        5       00
+                                          P0      J154
+                                          9-1   10K1
+                                                10K0
+                                                10K0
+K0 + 1 INTO K0, FOR EVER.                         J110
+                                                30H0    9-1
+THE TRAP ACTION: PRINT THE TRAP           R1      J154
+SYMBOL, WHICH W28 HOLDS,                        11W28
+                                                  J156
+                                                  J155
+AND HALT.                                         J7    0
+                                        5       01
+                                          K0    010
+                                          K1    011
+TRAP WHEN H3 REACHES 100.                 W33   01100
+TRAP ACTIONS.                             W26     9-1   0
+                                          9-1     0
+                                                  H3
+                                                  R1    0
+                                        5         P0

@@ -58,7 +58,11 @@ pub enum Cont {
     Structure,
     MonitorStart,
     MonitorEnd,
-    Trap,
+    /// A trap action, from J170 or taken by the system; `space` if it was
+    /// the trap on H2, after which the cells are withheld again.
+    Trap {
+        space: bool,
+    },
 }
 
 /// How the process was reached: named in an instruction with P = 0, or as
@@ -69,6 +73,9 @@ pub enum Ctx {
     Instruction,
     Link,
     None,
+    /// A trap taken between instructions: afterwards interpretation goes
+    /// on with the instruction it was about to interpret.
+    Resume,
 }
 
 enum Next {
@@ -97,6 +104,7 @@ impl Machine {
         // The first instruction of the manual's traced run is the fifth
         // cycle: the system spends four in starting.
         self.set_int(H3, 4);
+        self.withhold();
         self.halted = false;
         self.level = 1;
     }
@@ -121,6 +129,11 @@ impl Machine {
         let h3 = &mut self.mem[H3 as usize];
         if h3.q == Q_DATA && h3.p == 0 {
             *h3 = Word::data(0, h3.bits().wrapping_add(1));
+            // Section 21: the trap on H3, when it equals the integer in W33.
+            let w33 = self.mem[w(33) as usize];
+            if w33.q == Q_DATA && w33.bits() != 0 && w33.bits() == self.mem[H3 as usize].bits() {
+                self.pending_trap = Some(H3);
+            }
         }
     }
 
@@ -141,6 +154,19 @@ impl Machine {
 
     /// One instruction.
     pub fn step(&mut self) -> Res<()> {
+        if let Some(t) = self.pending_trap.take() {
+            if !self.halted {
+                let space = t == H2;
+                let sym = Sym { a: t, q: Q_REGIONAL };
+                // With no action, the program may use the withheld cells; if
+                // it runs out again, that is an error.
+                if let Some(action) = self.trap_action(sym)? {
+                    self.conts.push((Cont::Trap { space }, Ctx::Resume));
+                    let marks = NATIVE | (self.mem[H1 as usize].p & TRACE);
+                    return self.descend(action, marks);
+                }
+            }
+        }
         let mut next = Next::Q;
         loop {
             next = match next {
@@ -261,6 +287,7 @@ impl Machine {
                 Next::Out(outcome, ctx) => match outcome {
                     Outcome::Done => match ctx {
                         Ctx::Link => Next::Ascend,
+                        Ctx::Resume => return Ok(()),
                         _ => Next::Advance,
                     },
                     Outcome::Exec(s) => {

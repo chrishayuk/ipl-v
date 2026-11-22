@@ -254,9 +254,12 @@ impl Machine {
             }
             Cont::MonitorStart => Ok(Outcome::ContinueP),
             Cont::MonitorEnd => Ok(Outcome::AscendMore),
-            Cont::Trap => {
+            Cont::Trap { space } => {
                 self.restore(w(27));
                 self.restore(w(28));
+                if space {
+                    self.withhold();
+                }
                 Ok(Outcome::Done)
             }
         }
@@ -877,17 +880,8 @@ impl Machine {
             // ---- error trap, section 21 ----
             170 => {
                 let s = self.pop();
-                let cia = self.mem[H1 as usize].symb;
-                let action = match self.attribute(w(26), s.a)? {
-                    Some(found) => Some(found),
-                    None => self.attribute(w(26), 0)?,
-                };
-                if let Some((_, _, v)) = action {
-                    self.preserve(w(27))?;
-                    self.mem[w(27) as usize].symb = cia;
-                    self.preserve(w(28))?;
-                    self.put(w(28), s);
-                    return Ok(Outcome::Call(self.mem[v as usize].symb, Cont::Trap));
+                if let Some(action) = self.trap_action(s)? {
+                    return Ok(Outcome::Call(action, Cont::Trap { space: false }));
                 }
             }
             171 => {}

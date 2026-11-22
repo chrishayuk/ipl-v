@@ -125,6 +125,10 @@ pub struct Machine {
     /// Count of executions of each primitive.
     pub prim_counts: Vec<u64>,
     pub cycles: u64,
+    /// A trap waiting to be taken at the start of the next step (section 21).
+    pub pending_trap: Option<u32>,
+    /// The cells of available space withheld for the trap on H2.
+    pub reserve: Vec<u32>,
 }
 
 pub type Res<T> = Result<T, String>;
@@ -162,6 +166,8 @@ impl Machine {
             trace_out: String::new(),
             prim_counts: vec![0; J_SIZE as usize],
             cycles: 0,
+            pending_trap: None,
+            reserve: Vec::new(),
         };
         m.add_region(b'H', H0, 6);
         m.add_region(b'J', J_ORG, J_SIZE);
@@ -416,7 +422,21 @@ impl Machine {
         if !self.space_built {
             self.build_space();
         }
-        let a = self.mem[H2 as usize].link;
+        let mut a = self.mem[H2 as usize].link;
+        if a == 0 && !self.reserve.is_empty() {
+            // Section 21: the withheld cells go back on H2, and the program
+            // traps on H2 so that it can make room.
+            for c in std::mem::take(&mut self.reserve) {
+                self.mem[c as usize] = Word {
+                    link: self.mem[H2 as usize].link,
+                    ..Word::ZERO
+                };
+                self.mem[H2 as usize].link = c;
+                self.free_cells += 1;
+            }
+            self.pending_trap = Some(H2);
+            a = self.mem[H2 as usize].link;
+        }
         if a == 0 {
             return Err("available space is exhausted".to_string());
         }
@@ -455,6 +475,51 @@ impl Machine {
         };
         self.mem[H2 as usize].link = a;
         self.free_cells += 1;
+    }
+
+    /// Withhold 1W32 cells from the end of H2 (section 21): they are given
+    /// back when available space runs out, so that the program can trap.
+    /// The end, so that the addresses the program is given do not change.
+    pub fn withhold(&mut self) {
+        let want = self.wint(32).unwrap_or(0).max(0) as usize;
+        if want == 0 || !self.reserve.is_empty() {
+            return;
+        }
+        if !self.space_built {
+            self.build_space();
+        }
+        let mut chain = Vec::with_capacity(self.free_cells as usize);
+        let mut c = self.mem[H2 as usize].link;
+        while c != 0 {
+            chain.push(c);
+            c = self.mem[c as usize].link;
+        }
+        let keep = chain.len().saturating_sub(want);
+        if keep == chain.len() {
+            return;
+        }
+        let last = if keep == 0 { H2 } else { chain[keep - 1] };
+        self.mem[last as usize].link = 0;
+        self.reserve = chain[keep..].to_vec();
+        self.free_cells -= self.reserve.len() as u32;
+        self.low_water = self.low_water.min(self.free_cells);
+    }
+
+    /// The routine W26 gives for the trap `symbol`, or for internal zero,
+    /// with W27 and W28 set as section 21 says. None if there is none.
+    pub fn trap_action(&mut self, symbol: Sym) -> Res<Option<u32>> {
+        let action = match self.attribute(w(26), symbol.a)? {
+            Some(found) => Some(found),
+            None => self.attribute(w(26), 0)?,
+        };
+        let Some((_, _, v)) = action else { return Ok(None) };
+        let cia = self.mem[H1 as usize].symb;
+        self.preserve(w(27))?;
+        self.mem[w(27) as usize].symb = cia;
+        self.preserve(w(28))?;
+        self.mem[w(28) as usize].symb = symbol.a;
+        self.mem[w(28) as usize].q = symbol.q;
+        Ok(Some(self.mem[v as usize].symb))
     }
 
     /// Preserve (section 1.15, 9.1): a new cell takes a copy of the word and

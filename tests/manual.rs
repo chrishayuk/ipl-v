@@ -114,7 +114,10 @@ fn the_words_are_where_figure_1_puts_them() {
     // "NUMBER OF CELLS ON AVAILABLE SPACE=21858": cells 142 to 21999.
     let mut m = m;
     m.alloc().unwrap();
-    assert_eq!(m.free_cells + 1, 21858);
+    // Counted at the end of loading; the run has since withheld 1W32 cells
+    // (ten) for the trap on H2.
+    assert_eq!(m.reserve.len(), 10);
+    assert_eq!(m.free_cells + 1 + m.reserve.len() as u32, 21858);
 }
 
 #[test]

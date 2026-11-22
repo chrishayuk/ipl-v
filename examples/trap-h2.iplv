@@ -1,0 +1,52 @@
+TRAP ON AVAILABLE SPACE                 9
+P0 MAKES A LIST LONGER FOR EVER. WHEN   1
+AVAILABLE SPACE RUNS OUT, THE SYSTEM    1
+GIVES BACK THE TEN CELLS IT WITHHELD AT 1
+THE START (1W32) AND EXECUTES THE TRAP  1
+ACTION FOR H2, HERE R1, WHICH ERASES THE1
+LIST AND STARTS ANOTHER. THE THIRD TIME,1
+IT HALTS.                               1
+                                        2 K                10
+                                        2 L                10
+                                        2 P                10
+                                        2 R                10
+                                        2 T                10
+                                        5       00
+                                          P0      J90
+L1 NAMES A LIST THAT GROWS FOR EVER.            20L1
+                                          9-1   11L1
+                                                10T0
+                                                  J65   9-1
+THE TRAP ACTION: SAY SO,                  R1      J154
+                                                10T1
+                                                  J157
+                                                10K3
+                                                  J161
+                                                11L1
+COUNT THE LIST,                                   J126
+                                                  J157
+                                                  J155
+                                                11L1
+ERASE IT,                                         J71
+                                                  J90
+START ANOTHER,                                  20L1
+                                                10K1
+                                                10K0
+                                                10K0
+                                                  J110
+                                                10K2
+AND STOP AFTER THE THIRD TIME.                    J116
+                                                700     J7
+                                        5       01
+                                          L1      0     0
+                                          T0    21 X
+                                          T1    21SPACE
+                                          K0    010
+                                          K1    011
+                                          K2    012
+                                          K3    011
+                                          W26     9-1   0
+                                          9-1     0
+                                                  H2
+                                                  R1    0
+                                        5         P0
