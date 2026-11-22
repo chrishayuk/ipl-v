@@ -85,7 +85,7 @@ S4 YES
 ```
 
 The manual's Fig. 3 gives the level, H1, the instruction, H5, H0 and W0 at
-twenty-five of the 151 steps it takes to find S4. `tests/manual.rs` runs
+twenty-seven of the 151 steps it takes to find S4. `tests/manual.rs` runs
 this deck and holds it to every one of them. A few, to read with the
 code:
 
@@ -94,7 +94,7 @@ Level  Step  H1                Instruction  H5  H0                  W0
   1      3   102               R3           +   S4,L6
   2      4   R3,102            J50          +   S4,L6
   2     25   211,102           R3           +   S4,9-1,501          S4
-  3     48   R3,211,211,102    J50          +   S4,9-3,601,501      S4,S4
+  4     48   R3,211,211,102    J50          +   S4,9-3,601,501      S4,S4
   4     87   213,211,211,102   30HO J30     -   803,601,501         S4,S4,S4
   3    100   211,211,102       R3           +   S4,9-3,602,501      S4,S4
   1    151   103               70110        +

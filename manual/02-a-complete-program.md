@@ -129,9 +129,11 @@ THE LIST K1.                              K1      0
 - all 46 lines of Fig. 2 are the same in level, instruction address, H5,
   P, Q, SYMB, LINK and H3.
 
-The trace above differs from Fig. 2 in two ways only: the list the
-program makes is numbered 145 here where Fig. 2 has 148 (the system of
-1964 had used three more cells of available space by then; for what, the
-manual does not say), and the layout of the line is this
-implementation's. `iplv run examples/manual-f1.iplv --list` prints the
+The trace above differs from Fig. 2 in three ways: the list the program
+makes is numbered 145 here where Fig. 2 has 148 (the system of 1964 had
+used three more cells of available space by then; for what, the manual
+does not say); the layout of the line is this implementation's; and Fig.
+2 ends with the system's message `PROGRAM RAN TO COMPLETION.`, which this
+implementation does not print. (An earlier version of this page said
+"two ways only" and missed the message.) `iplv run examples/manual-f1.iplv --list` prints the
 assembly listing.

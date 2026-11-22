@@ -13,8 +13,11 @@ properly."
 
 L10 represents (A+B)-(A-B)=(A-B)+(A+B), as a tree of sublists, each with
 its operator first (page 41). The code says `10 L5` where the text says
-L10; L5 is a list of page 23 that has no operators in it, so we take the
-text at its word.
+L10; L5 is a list of page 29 that has no operators in it, so we take the
+text at its word. That reading is defensible rather than compelled: page
+72 calls L10 "a general list structure rather than a tree", while page 41
+gives it as the tree of Problem 33. Either way the code and the prose
+conflict, and one symbol is changed.
 
 ```iplv
 R77 AS PRINTED, PAGE 72                 9

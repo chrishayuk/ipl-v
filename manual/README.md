@@ -35,14 +35,32 @@ where it happens:
   data written as "...". What is added is said to be added, and is kept
   apart from the manual's code.
 
-Where the manual and the machine disagree, the chapter says so. Twice it
-is the manual: the trace of Fig. 3 says `10L4` where the listing says
-`10 S4`, and R77's code names L5 where its text means L10.
+An earlier version of the R95 deck (chapter 8) left out the Type-5
+routine-header card that page 92 has before R96; it is in now. The
+independent review ([`docs/independent-review.md`](../docs/independent-review.md))
+checked twenty passages against the page images and found that and three
+slips in this commentary (a level and a count in chapter 4, a page number
+in chapter 7), all now put right.
+
+## What the manual gets wrong, and of what kind
+
+Each correction is labelled by kind: a **slip** is wrong under any reading
+of the source; a **conflict** is where the sources say two things and we
+follow one; an **interpretation** is our reading of what was meant; and
+**ours** is a consequence of how this implementation is built.
+
+| where | correction | kind |
+|---|---|---|
+| R62, page 26 (chapter 3) | `10 W1` should be `11 W1` | slip, made on purpose: the manual prints the error and its answer |
+| Fig. 3, step 2 (chapter 4) | the trace's `10L4` is `10 S4` in the listing, and H0 at step 3 agrees with the listing | slip |
+| R77, page 72 (chapter 7) | the code's `10 L5` is run as `10 L10`, the list the text names | conflict |
+| R77's subprocess (chapter 7) | H5 set + before 9-10 ends | slip, made on purpose: the manual explains it |
+| J100 coded the obvious way, page 74 (chapter 7) | the manual's own context housekeeping, page 75 | slip, made on purpose: the manual's counterexample |
 
 ## What they checked
 
 Running these programs found two things wrong with this implementation,
-both now put right:
+both now put right (both of kind **ours**):
 
 - **J101** did not mark the lists it generates as processed, and so did
   not present each head's own word as the cell after the head, as Part

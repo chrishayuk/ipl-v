@@ -171,6 +171,7 @@ ERASE BLANK DATA TERM.                    9-200   J9
 NAME OF OUTPUT LIST TO H0.                9-300 11W0
 POP W0.                                           J30
 CLEAN UP PRINT LINE CONTROLS, H5+.                R97   J4
+ROUTINE HEADER.                         5
 R96: SET UP TO READ FROM LINE (0).      1
 PRESERVE W21, W24, W25, W30. SET 1W21,  1
 1W25 = 0. SET 1W24 = (0). SET 1W30 = 5. 1
@@ -226,16 +227,23 @@ R80 AND R81, AS ABOVE.                  1
 THIS IS A SAMPLE SENTENCE FOR R95 TO READ.
 ```
 
-The sentence comes back whole. Not quite as the manual intends, though:
-the list is built in five-column pieces that run across the words (` SAMP`,
-`LE SE`, `NTENC`), and only the trailing blanks are lost, so it prints
-correctly while being nothing like a list of words.
+The sentence comes back whole. The list is built in five-column pieces
+that run across the words (` SAMP`, `LE SE`, `NTENC`), which is what the
+manual asks for: page 91 wants "a list of BCD data terms, exactly like
+list L15", and L15 divides `SENTENCE.` between two terms in the same way.
+An earlier version of this page said the pieces were "nothing like a list
+of words" and not what the manual intends; that put a requirement on R95
+that the manual does not make.
 
-Two things here are not as the manual has them. W21 is set to 0 by R96
-for reading, as a left margin; section 16 numbers print columns from 1,
-so the manual seems to count from 0 here and from 1 there. And J180 here
-puts the entry column back to 1 on reading a card, as the Logic Theorist
-needs (see the main README); the manual's R96 has already set it to 0,
-and its J184 scans from column 1W25 + 1, so it would look at column 1 and
-this J184 at column 2. The sentence card is punched from column 9, as on
-page 93, so either way the first non-blank is found.
+R96 sets W21 and W25 to 0. 1W25 = 0 is where a scan starts from: J184
+looks at columns from 1W25 + 1, so it begins with column 1, and J180, as
+page 236 defines it, reads the card without moving 1W25. (An earlier
+version of this repository had J180 put 1W25 back to 1, which made J184
+start at column 2 and lose a sentence punched from column 1: `HELLO`
+read as `ELLO`. That change was not in the manual, and the Logic
+Theorist, for which it was made, does not need it; it has been taken
+out.) The sentence card here is punched from column 9, as on page 93.
+
+Page 92 has a Type-5 routine-header card between R95 and R96's
+comments. An earlier version of this deck left it out; it is in now. It
+makes no difference to the run.
