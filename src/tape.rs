@@ -461,6 +461,7 @@ impl Machine {
 /// SIGN and the columns from SYMB on of a data term's card (Fig. 2).
 fn data_fields(d: Datum) -> (u8, String) {
     match d {
+        Datum::Int(MINUS_ZERO) => (b'-', format!("{:>11}", 0)),
         Datum::Int(i) => (
             if i < 0 { b'-' } else { b' ' },
             format!("{:>11}", i.unsigned_abs()),

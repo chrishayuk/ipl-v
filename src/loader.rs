@@ -536,7 +536,12 @@ fn data_term(card: &Card) -> Res<Word> {
             } else {
                 d.parse().map_err(|_| "the integer is too large".to_string())?
             };
-            Datum::Int(if negative { -v } else { v })
+            Datum::Int(match (negative, v) {
+                // A minus sign on zero punches minus zero (J123).
+                (true, 0) => MINUS_ZERO,
+                (true, v) => -v,
+                (false, v) => v,
+            })
         }
         1 => {
             // .ddddd in SYMB, the exponent at the right of LINK, and any

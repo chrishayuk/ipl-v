@@ -998,6 +998,7 @@ impl Machine {
 
     pub fn int(&self, a: u32, what: &str) -> Res<i64> {
         match self.datum(a) {
+            Some(Datum::Int(MINUS_ZERO)) => Ok(0),
             Some(Datum::Int(i)) => Ok(i),
             Some(Datum::Float(f)) => Ok(f as i64),
             Some(Datum::Octal(o)) => Ok(o as i64),

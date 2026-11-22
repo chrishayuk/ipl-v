@@ -85,3 +85,66 @@ fn j180_leaves_the_entry_column_where_it_was() {
     ];
     assert_eq!(run(2000, &deck).unwrap().trim(), "1");
 }
+
+/// Finding 3. J123, page 196: "Zero is signed; J123 takes zero into minus
+/// zero." J114, page 195, tests identity, so minus zero is not plus zero;
+/// J117 still finds it zero, and J123 takes it back to plus zero.
+#[test]
+fn j123_takes_zero_into_minus_zero() {
+    let deck = [
+        card("2", "N", "", "", "2"),
+        card("2", "P", "", "", "1"),
+        card("2", "S", "", "", "1"),
+        card("2", "Y", "", "", "2"),
+        card("5", "", "00", "", ""),
+        // J123 on N0, then N0 = N1?
+        word("P0", "10", "N0", ""),
+        word("", "", "J123", ""),
+        word("", "10", "N1", ""),
+        word("", "", "J114", ""),
+        word("", "", "S0", ""),
+        // Minus zero prints as -0. Is it zero?
+        word("", "10", "N0", ""),
+        word("", "", "J153", ""),
+        word("", "10", "N0", ""),
+        word("", "", "J117", ""),
+        word("", "", "S0", ""),
+        // J123 again: is N0 now the same as N1?
+        word("", "10", "N0", ""),
+        word("", "", "J123", ""),
+        word("", "10", "N1", ""),
+        word("", "", "J114", ""),
+        word("", "", "S0", "0"),
+        // S0 prints the sign of H5.
+        word("S0", "70", "9-1", ""),
+        word("", "10", "Y0", ""),
+        word("", "", "J153", "0"),
+        word("9-1", "10", "Y1", ""),
+        word("", "", "J153", "0"),
+        card("5", "", "01", "", ""),
+        word("N0", "+01", "", "0"),
+        word("N1", "+01", "", "0"),
+        word("Y0", "+21", "+", ""),
+        word("Y1", "+21", "-", ""),
+        card("5", "", "", "P0", ""),
+    ];
+    let out = run(2000, &deck).unwrap();
+    let lines: Vec<&str> = out.lines().map(str::trim).collect();
+    assert_eq!(lines, ["-", "-0", "+", "+"]);
+}
+
+/// A minus sign punched on an integer zero loads as minus zero.
+#[test]
+fn minus_zero_can_be_punched() {
+    let deck = [
+        card("2", "N", "", "", "1"),
+        card("2", "P", "", "", "1"),
+        card("5", "", "00", "", ""),
+        word("P0", "10", "N0", ""),
+        word("", "", "J153", "0"),
+        card("5", "", "01", "", ""),
+        word("N0", "-01", "", "0"),
+        card("5", "", "", "P0", ""),
+    ];
+    assert_eq!(run(2000, &deck).unwrap().trim(), "-0");
+}

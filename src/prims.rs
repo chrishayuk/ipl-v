@@ -37,6 +37,7 @@ enum Num {
 impl Machine {
     fn num(&self, a: u32, what: &str) -> Res<Num> {
         match self.datum(a) {
+            Some(Datum::Int(MINUS_ZERO)) => Ok(Num::I(0)),
             Some(Datum::Int(i)) => Ok(Num::I(i)),
             Some(Datum::Float(f)) => Ok(Num::F(f)),
             Some(Datum::Octal(o)) => Ok(Num::I(o as i64)),
@@ -812,13 +813,17 @@ impl Machine {
             }
             122 | 123 => {
                 let a = self.arg(0).a;
-                let d = match self.num(a, what)? {
-                    Num::I(x) => Datum::Int(if n == 122 {
+                let d = match (self.datum(a), self.num(a, what)?) {
+                    // Zero is signed (J123): minus zero and plus zero
+                    // change places, and J122 makes either plus.
+                    (Some(Datum::Int(MINUS_ZERO)), _) => Datum::Int(0),
+                    (Some(Datum::Int(0)), _) if n == 123 => Datum::Int(MINUS_ZERO),
+                    (_, Num::I(x)) => Datum::Int(if n == 122 {
                         x.wrapping_abs()
                     } else {
                         x.wrapping_neg()
                     }),
-                    Num::F(x) => Datum::Float(if n == 122 { x.abs() } else { -x }),
+                    (_, Num::F(x)) => Datum::Float(if n == 122 { x.abs() } else { -x }),
                 };
                 self.mem[a as usize] = Word::from_datum(d);
             }

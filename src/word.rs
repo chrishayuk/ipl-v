@@ -26,6 +26,14 @@ pub const Q_INTERNAL: u8 = 4;
 /// Q in the cell that names a primitive: SYMB is the machine routine.
 pub const Q_PRIM: u8 = 5;
 
+/// An integer data term's minus zero. Part Two says "Zero is signed; J123
+/// takes zero into minus zero" (J123, page 196): the 704 and 7090 kept a
+/// sign and a magnitude. Here integers are two's complement, so minus zero
+/// is given this bit pattern, which no integer of the 704's 35-bit
+/// magnitude can have. It is zero in arithmetic and in J117 to J119; J114,
+/// which compares the words, tells it from plus zero, and it prints `-0`.
+pub const MINUS_ZERO: i64 = i64::MIN;
+
 /// A symbol together with the Q that travels with every copy of it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Sym {
@@ -111,6 +119,7 @@ impl Word {
 /// How a data term is written on the coding sheet and in listings.
 pub fn datum_text(d: Datum) -> String {
     match d {
+        Datum::Int(MINUS_ZERO) => "-0".to_string(),
         Datum::Int(i) => i.to_string(),
         Datum::Float(f) => float_text(f),
         Datum::Alpha(a) => String::from_utf8_lossy(&a).into_owned(),
