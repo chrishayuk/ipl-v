@@ -10,10 +10,12 @@
 //! compact.
 //!
 //! Routines in auxiliary storage (Type-6 and Type-7 headers on sets of
-//! routines) are loaded into main storage here. The buffer they shared was a
-//! way of saving main storage, and the manual's rules for them ("no auxiliary
-//! routine shall modify itself") make the difference invisible to a program
-//! that keeps them; H4, which tracked the buffer, is not used.
+//! routines) are loaded into main storage here; H4, which tracked the buffer
+//! they shared, is not used. The manual's rules for them ("no auxiliary
+//! routine shall modify itself") mean a program cannot tell from the
+//! routines themselves, but it can tell from storage: they occupy main
+//! storage that the shared buffer did not, so J126 on H2, or running out of
+//! space, gives a different answer than in 1964.
 
 use crate::interp::{Cont, Outcome};
 use crate::machine::*;

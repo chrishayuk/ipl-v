@@ -219,8 +219,11 @@ impl Machine {
 
     /// A Type-3 card (section 18.3).
     fn block_card(&mut self, card: &Card) -> Res<()> {
-        // The first edition of the manual put the name of a print line in
-        // SYMB (section 25.3), and decks of 1961 have it there.
+        // A print line's name may be in SYMB with NAME blank: Simon's
+        // Heuristic Coder (listing of 16 July 1961) has it there, perhaps
+        // as the first edition of the manual had it. That edition is not
+        // available to check (sources/README.md), so this is accepted for
+        // the decks' sake, not on the first edition's authority.
         let name = if card.name == Field::Blank && card.q == 1 {
             card.symb
         } else {

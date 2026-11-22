@@ -10,8 +10,10 @@ see where those words mean the same thing and where they do not. It does
 not assume that they mean the same thing anywhere.
 
 What is said about LARQL is quoted from its main branch at commit
-`d12e1c6d9` (22 November 2026), with the file it comes from. Results on
-LARQL's research branches are not used. What is said about IPL-V is from
+`d12e1c6d9` (22 November 2026), with the file it comes from. No copy of
+those files is kept here, so the quotations can be checked only against
+that commit of LARQL itself. Results on LARQL's research branches are not
+used. What is said about IPL-V is from
 the manual of 1964 and can be run in this repository.
 
 ## One example in both

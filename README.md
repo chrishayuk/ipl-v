@@ -1,8 +1,9 @@
 # iplv
 
 An implementation of **IPL-V**, Information Processing Language V: the
-list-processing language in which the first artificial intelligence
-programs were written. It was designed at RAND and Carnegie Tech by Allen
+last of the IPL list-processing languages, the family in which the first
+artificial intelligence programs were written (the Logic Theorist first
+ran in IPL-II, and was converted to IPL-V later). IPL-V was designed at RAND and Carnegie Tech by Allen
 Newell, J. C. Shaw, Herbert Simon, Fred Tonge and others, ran on the IBM
 650, 704 and 709 by 1960, and is described in the *Information Processing
 Language-V Manual* (Prentice-Hall, 1961; second edition 1964).
@@ -13,7 +14,8 @@ defines the machine that interprets them: cells, an available space list,
 push-down storage cells, an interpretation cycle and some 190 basic
 processes. This is that machine, written from the manual, in Rust with no
 dependencies. Storage is a real array of cells and a real free list, so a
-program here uses space, gives it back and runs out of it as it did then.
+program here uses space, gives it back and runs out of it much as it did
+then; where it does not, "What is different from the manual" says so.
 
 ```
 THE LIST K1.                              K1      0
@@ -53,19 +55,26 @@ The H3 column is what settled how cycles are counted: one for each
 instruction interpreted, and one more for each primitive it executes.
 
 **Against a program of 1963.** Einar Stefferud's IPL-V version of the Logic
-Theorist of Newell, Shaw and Simon (RAND RM-3731, 1963) runs unmodified, in
-the transcription of the listing by Rupert Lane and Jeff Shrager with David
-Moews's corrections, and its output is compared with the output printed in
-that memorandum, which Moews transcribed:
+Theorist of Newell, Shaw and Simon (RAND RM-3731, 1963) runs with no change
+to the deck, in the transcription of the listing by Rupert Lane and Jeff
+Shrager with David Moews's corrections (the loader accepts the
+transcription's conventions: see "What is different" below), and its
+output is compared with the output printed in that memorandum, which
+Moews transcribed:
 
 - all 24 theorems of *Principia Mathematica* get the 1963 result (23
   proved; \*2.15 gives up at its effort limit), each by the same search:
   the same number of subproblems and of substitutions for every theorem,
   \*2.15 included;
 - the printout is the same line for line, 533 lines of it, apart from
-  three slips in the transcription of the 1963 pages (`DFF.` for `DEF.`
-  and two missing commas), the effort figures, and the core addresses it
-  prints for rejected subproblems;
+  the effort figures, the core addresses it prints for rejected
+  subproblems, and three lines where the 1963 printout itself differs
+  from this run: `DFF.` for `DEF.` in the proof of \*2.14 (page 95), very
+  likely a slip of the 1963 printing, and no comma before `SUBLEVEL
+  REPLACEMENT` in the first subproblems of \*3.13 and \*3.14 (pages 101
+  and 102), where every other such line has one, for a reason not known.
+  The transcription is right in all three: the scan has them. (An earlier
+  version of this README blamed the transcription.)
 - "effort", which is the cycle count, comes to between 98.3 and 98.7 per
   cent of the 1963 figure on every theorem;
 - the deck saves for restart as it was meant to: its first routine, X9,
@@ -96,7 +105,10 @@ The whole run takes 865,503 cycles and never has fewer than 15,312 cells
 of available space left, out of 22,000 (ten more are withheld for the
 trap on H2). The remaining one and a half per
 cent of effort is not explained. Measured over exactly the cycles the
-program counts (from `50 H3` in M3 to `10 H3` in M77), it is not:
+program counts (from `50 H3` in M3 to `10 H3` in M77), it is not (these
+were experiments made while writing the interpreter; their tables and the
+code that fitted them are not kept in this repository, so they are
+reported, not reproduced):
 
 - a cycle more for each routine executed, each return, each branch
   taken, or each basic process reached through a LINK: none of these is
@@ -115,6 +127,8 @@ changes: a symbol that system rejects, the restart, the input (that IPL-V
 lacks the processes the deck reads it with), and the order of the inputs
 to `J11` in two places, which kept it from running there (his
 [notes](https://github.com/dmoews/ipl-v-logic-theorist/tree/main/7094)).
+The figures in this paragraph are read from his repository; nothing here
+checks them.
 In his output there (`7094/patched-logic-theorist.out`), effort on the 21
 theorems whose figure prints is between 98.1 and 119.8 per cent of 1963's,
 from theorem to theorem; three print as `000000`, which he notes. So the
@@ -141,7 +155,8 @@ both. The Logic Theorist deck was transcribed by Rupert Lane and Jeff
 Shrager and corrected by Moews, who also transcribed its 1963 output; the
 Heuristic Coder and the sentence generator are Shrager's transcriptions.
 What is different here is the
-storage model and the cycle count. Shrager reports effort about a third
+storage model (with the exceptions given under "The machine" below) and
+the cycle count. Shrager reports effort about a third
 below the 1963 figures on his interpreter, with \*2.15 searching further
 than it did in 1963 before the limit stops it (48 subproblems for 31), and
 says that Moews's differs in the same way.
@@ -287,7 +302,7 @@ cells and links.
 
 ```bash
 node web/build.mjs                  # builds web/iplv.wasm and web/examples.json
-node web/test.mjs                   # 77 checks of the WebAssembly build
+node web/test.mjs                   # 201 checks of the WebAssembly build
 python3 -m http.server -d web 8000  # then open http://localhost:8000
 ```
 
@@ -337,11 +352,14 @@ are the basic processes.
 `src/tape.rs` is the tapes and the punch, `src/auxiliary.rs` the
 auxiliary stores, and `src/restart.rs` the storage image J166 writes.
 
-The state of a run is in the cells and nowhere else, with two exceptions:
-the processes that execute a routine and have work to do when it returns
-(J18, J100 to J103, and the monitor and trap actions) keep a note of that
-work outside storage; and structures filed in auxiliary storage are held
-there, as they were. J166 saves both. The hierarchy of routines in progress is the
+The state of a run is in the cells and nowhere else, with three
+exceptions: the processes that execute a routine and have work to do when
+it returns (J18, J100 to J103, and the monitor and trap actions) keep a
+note of that work outside storage; structures filed in auxiliary storage
+are held there, as they were; and the characters of the print lines are
+kept beside the machine (the words a line needs are reserved from
+storage, as section 18.3 says, but the characters are not in them). J166
+saves all three. The hierarchy of routines in progress is the
 push-down list of H1, made of cells from H2, as the manual has it.
 
 ## What is different from the manual, and what is missing
@@ -365,8 +383,9 @@ source. The ones that matter:
 - **Cells made while a program runs** come three addresses lower than in
   the manual's trace (145 for its 148). Those made by loading agree.
 
-Everything in Part Two is implemented, with these choices where the
-manual leaves the matter to each machine's write-up:
+The rest of Part Two is implemented, with these substitutions and
+omissions where the manual leaves the matter to each machine's write-up
+(all of kind **ours**, in the terms of the next section):
 
 - **Card forms.** Only IPL standard form, one word to a card. The
   compressed and binary forms (W16 and W17 = 1 or 2) are not described in
@@ -386,15 +405,54 @@ manual leaves the matter to each machine's write-up:
   manual has it print the units in use). A restart tape is read from its
   beginning.
 - **Routines in auxiliary storage** (Type-6 and Type-7 headers on routines)
-  are kept in main storage. The shared buffer saved main storage; the
-  manual's rules for auxiliary routines make the difference invisible to a
-  program that keeps them. H4 is not used. Data under those headers is
-  filed in auxiliary storage, as the manual says.
+  are kept in main storage. H4 is not used. Data under those headers is
+  filed in auxiliary storage, as the manual says. The difference can be
+  seen by a program that keeps the manual's rules for auxiliary routines:
+  the routines take up main storage that the shared buffer of 1964 did
+  not, so counting H2 with J126, or running out of space, gives a
+  different answer. (An earlier version of this README said the
+  difference was invisible; it is not.)
 - **W38 and W42 start as J0**, which here means the system's own test for
   compacting. A program may put its own routine there.
 - **J141** has no console to read and always sets H5 -.
 - **J173 reads blocks from 1W19**, the write unit, as the text says, and
-  J176 spaces that unit too.
+  J176 spaces that unit too. This follows the manual (pages 218 and 219);
+  it is not a correction.
+- **List printing** (J150 to J152) follows the manual's printed run, Fig.
+  2, which prints PQ only for data terms, rather than the format diagram
+  of page 214, which has a PQ column for every word. Local symbols in J151
+  and J152 are printed as their addresses with PQ (`02 68`), as page 214
+  says. This is a **conflict** between the sources.
+- **Minus zero.** Integer zero is signed, as J123 says; arithmetic that
+  comes to zero gives plus zero, which the manual does not settle.
+
+## Corrections, and of what kind
+
+Every place where this repository says a source is wrong, or departs
+from it, is one of four kinds:
+
+- **slip**: wrong under any reading of the source;
+- **conflict**: the sources say two things, and one is followed;
+- **interpretation**: our reading of what was meant;
+- **ours**: a consequence of how this implementation is built.
+
+| what | kind |
+|---|---|
+| The manual's R62 (`10 W1` for `11 W1`), its R77 subprocess that leaves H5 -, and its J100 coded without context housekeeping | slip, each made on purpose and answered by the manual itself ([`manual/README.md`](manual/README.md)) |
+| Fig. 3's `10L4` where the listing has `10 S4` | slip |
+| R77's `10 L5`, run as `10 L10`, the list the text names | conflict |
+| `DFF.` for `DEF.` in the 1963 Logic Theorist printout | slip, in the 1963 printing; the test allows it |
+| The two missing commas in the 1963 printout (\*3.13, \*3.14) | not settled: the scan has them, the deck prints them; the test allows both |
+| List printing after Fig. 2 rather than page 214 | conflict |
+| Indented fields, a bare `9`, a print line's name in SYMB (as the Heuristic Coder of 1961 has it), a regional symbol beyond its region, regional cells erased only by J171, J142's `9-0` head, J129's multiplier, the first instruction at cycle 5, run-time addresses three lower | ours |
+| Tapes as files, J162's format, J166 printing nothing, routines in auxiliary storage kept in main storage, W38 and W42, J141 without a console, one card form | ours |
+| J101 marking, and a basic process reached by a LINK not being a step of its own (both repairs to this implementation) | ours |
+
+Withdrawn after the independent review: that the placing of a negative
+exponent's sign was unclear (page 215 is clear), that R95's five-column
+pieces are not what the manual intends (page 91 asks for them), and that
+J180 must set 1W25 to 1 for the Logic Theorist (it need not, and the
+manual does not say so). See [`docs/independent-review.md`](docs/independent-review.md).
 
 ## IPL-V and LARQL
 
@@ -417,6 +475,7 @@ cargo test
 | `tests/historical.rs` | the Logic Theorist, the Heuristic Coder and the sentence generator, if their decks are present |
 | `tests/tutorial.rs` | every deck in the tutorial, in `manual/` and in `docs/` against the output printed under it |
 | `tests/systems.rs` | tapes, blocks, regions, auxiliary storage, restart and the loader's special cards |
+| `tests/review.rs` | what the independent review found, one test for each defect put right |
 | `tests/check.rs`, `tests/lsp.rs` | the deck checker, and a conversation with the language server |
 | `web/browser-test.mjs` | the page, driven in headless Chrome |
 | `web/test.mjs` | the WebAssembly build: every example stepped and run, stops, the JSON the page draws from |

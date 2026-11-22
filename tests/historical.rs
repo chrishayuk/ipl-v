@@ -135,8 +135,10 @@ fn the_logic_theorist_does_what_it_did_in_1963() {
         );
     }
 
-    // Line for line the printout is the same, but for three slips in the
-    // transcription of the 1963 pages.
+    // Line for line the printout is the same, but for three lines where
+    // the 1963 printout differs from this run, as the scan shows and the
+    // transcription has it: DFF. for DEF. (page 95), and no comma before
+    // SUBLEVEL REPLACEMENT in *3.13 and *3.14 (pages 101 and 102).
     let (then, now) = (content(&printed), content(&out));
     assert_eq!(then.len(), now.len());
     let different: Vec<_> = then.iter().zip(&now).filter(|(a, b)| a != b).collect();
