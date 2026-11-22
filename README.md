@@ -364,8 +364,6 @@ source. The ones that matter:
   system did in the first four is not known.
 - **Cells made while a program runs** come three addresses lower than in
   the manual's trace (145 for its 148). Those made by loading agree.
-- **J180 sets the entry column 1W25 to 1.** The manual does not say so;
-  the Logic Theorist needs it.
 
 Everything in Part Two is implemented, with these choices where the
 manual leaves the matter to each machine's write-up:

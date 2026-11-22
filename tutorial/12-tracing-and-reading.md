@@ -124,7 +124,9 @@ the reader, and the program reads them when it likes.
 - **J183** and **J184** find the next blank and the next non-blank.
 
 The field is five columns wide unless you change the number that `W30`
-names. Reading a card puts the entry column back at 1.
+names. Reading a card does not move the entry column, which W25 names;
+J154 puts it at the left margin, column 1, so the deck below calls J154
+before each J180.
 
 ```iplv
 ADDING UP THE NUMBERS ON THE CARDS      9
@@ -132,7 +134,8 @@ ADDING UP THE NUMBERS ON THE CARDS      9
                                         2 T                10
                                         2 X                10
                                         5       00
-READ A CARD.                              P0      J180
+ENTRY COLUMN TO 1W21, THAT IS 1.          P0      J154
+READ A CARD.                                      J180
 NO MORE CARDS.                                  709-2
                                                 10X0
 COLUMNS 1-5, AS AN INTEGER, INTO X0.              J182

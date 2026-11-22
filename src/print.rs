@@ -236,7 +236,6 @@ impl Machine {
                     line.fill(b' ');
                     let k = line.len().min(80);
                     line[..k].copy_from_slice(&card.cols[..k]);
-                    self.set_wint(25, 1);
                     self.set_h5(true);
                 }
                 None => self.set_h5(false),

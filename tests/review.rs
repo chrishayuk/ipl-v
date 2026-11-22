@@ -59,3 +59,29 @@ fn a_print_line_takes_its_words_from_available_storage() {
     let too_big = available(Some(1000)).unwrap_err();
     assert!(too_big.contains("do not fit"), "{}", too_big);
 }
+
+/// Finding 2. J180, page 236, reads the card and sets H5; it does not move
+/// 1W25. With 1W25 = 0, as R96 leaves it, J184 scans from column 1.
+#[test]
+fn j180_leaves_the_entry_column_where_it_was() {
+    let deck = [
+        card("2", "M", "", "", "1"),
+        card("2", "P", "", "", "1"),
+        card("5", "", "01", "", ""),
+        word("M1", "-01", "", "1"),
+        card("5", "", "00", "", ""),
+        // 1W25 = 1W21 - 1 = 0.
+        word("P0", "", "J154", ""),
+        word("", "10", "M1", ""),
+        word("", "", "J161", ""),
+        word("", "", "J180", ""),
+        // Set 1W25 to the first non-blank column, as R95 does.
+        word("", "11", "W25", ""),
+        word("", "", "J184", ""),
+        word("", "11", "W25", ""),
+        word("", "", "J153", "0"),
+        card("5", "", "", "P0", ""),
+        "HELLO".to_string(),
+    ];
+    assert_eq!(run(2000, &deck).unwrap().trim(), "1");
+}
