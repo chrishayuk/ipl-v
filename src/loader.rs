@@ -260,7 +260,12 @@ impl Machine {
                     return Err(at(card, "a print line needs a regional name"));
                 };
                 let words = if size > 0 { size } else { (LINE_SIZE / 6) as u32 };
-                // Six characters to the word, as on the 704 and 7090.
+                // "These words are taken from available storage, not from
+                // the region" (section 18.3): they are reserved as a block,
+                // so that a line uses the space it would have used. The
+                // characters themselves are kept beside the machine, in
+                // `Machine::lines`, six to the word as on the 704 and 7090.
+                let origin = self.reserve_block(None, None, words).map_err(|e| at(card, &e))?;
                 let mut text = vec![b' '; words as usize * 6];
                 if card.p != 0 {
                     if let Some(next) = self.cards.pop_front() {
@@ -271,7 +276,7 @@ impl Machine {
                 self.mem[a as usize] = Word {
                     p: 7,
                     q: 7,
-                    symb: 0,
+                    symb: origin,
                     link: words,
                 };
                 self.lines.insert(a, text);
