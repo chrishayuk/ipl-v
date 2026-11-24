@@ -188,3 +188,68 @@ fn j151_prints_a_local_symbol_as_its_address_with_q_2() {
     assert!(address.parse::<u32>().is_ok(), "{}", out);
     assert_eq!(lines[2].trim(), format!("2 {}", address));
 }
+
+/// Fig. 2, page 140: a floating point data term has its fraction in SYMB,
+/// columns 51-55, and its sixth digit in column 57, the first of LINK; the
+/// shaded column 56 is not used. The loader read 51-56, so .123456 punched
+/// as the figure shows came in as .12345, and the writer of J142 put the
+/// sixth digit in column 56. Found in writing TPK (examples/tpk.iplv).
+#[test]
+fn a_floating_point_data_term_has_its_sixth_digit_in_column_57() {
+    let deck = [
+        card("2", "K", "", "", "10"),
+        card("2", "P", "", "", "10"),
+        card("5", "", "00", "", ""),
+        word("P0", "", "J0", "0"),
+        card("5", "", "01", "", ""),
+        word("K1", "11", "12345", "6  00"),
+        word("K2", "11", "75", "  -02"),
+        card("5", "", "", "P0", ""),
+    ];
+    let mut m = Machine::new(1000);
+    m.read_deck(&deck.join("\n"));
+    m.load().unwrap();
+    let value = |m: &Machine, n| match m.mem[m.lookup(b'K', n).unwrap() as usize].datum() {
+        Some(iplv::word::Datum::Float(f)) => f,
+        other => panic!("K{} is {:?}", n, other),
+    };
+    assert_eq!(value(&m, 1), 0.123456);
+    assert_eq!(value(&m, 2), 0.75e-2);
+    // Punched again, the sixth digit goes back to column 57.
+    let k1 = m.lookup(b'K', 1).unwrap();
+    let cards = m.punch_structure(k1).unwrap();
+    let c = cards.iter().find(|c| c.len() > 50 && &c[50..55] == "12345").expect("a card for K1");
+    let col = |n: usize| c.as_bytes().get(n - 1).copied().unwrap_or(b' ') as char;
+    assert_eq!((col(56), col(57), col(60), col(61)), (' ', '6', '0', '0'), "{}", c);
+}
+
+/// Fig. 2, page 140, the figure's own examples: a decimal integer has its
+/// digits in 52-55 and 58-61 (-12,192 is `1` in 55 and `2192` in 58-61),
+/// an octal number in 51-55 and 57-61. J142's writer ran both across 51-61.
+#[test]
+fn integers_and_octal_numbers_are_punched_in_the_columns_of_fig_2() {
+    let deck = [
+        card("2", "K", "", "", "10"),
+        card("2", "P", "", "", "10"),
+        card("5", "", "00", "", ""),
+        word("P0", "", "J0", "0"),
+        card("5", "", "01", "", ""),
+        card("", "K1", "-01", "1", " 2192"),
+        word("K2", "31", "77777", "77777"),
+        card("5", "", "", "P0", ""),
+    ];
+    let mut m = Machine::new(1000);
+    m.read_deck(&deck.join("\n"));
+    m.load().unwrap();
+    let punched = |n| {
+        let k = m.lookup(b'K', n).unwrap();
+        let cards = m.punch_structure(k).unwrap();
+        let c = cards.into_iter().find(|c| c.len() > 50).expect("a data card");
+        let mut f = c.into_bytes();
+        f.resize(61, b' ');
+        String::from_utf8(f[47..61].to_vec()).unwrap()
+    };
+    // Columns 48 to 61: SIGN, PQ, then SYMB (51-55), 56, LINK (57-61).
+    assert_eq!(punched(1), "-01    1  2192");
+    assert_eq!(punched(2), " 3177777 77777");
+}

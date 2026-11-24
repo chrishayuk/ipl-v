@@ -1,0 +1,210 @@
+TPK IN IPL-V                            9
+THE TPK ALGORITHM OF KNUTH AND TRABB    1
+PARDO, THE EARLY DEVELOPMENT OF         1
+PROGRAMMING LANGUAGES, STAN-CS-76-562,  1
+1976, PAGE 3 (THERE IN ALGOL 60): READ  1
+A0 TO A10; FOR I = 10 DOWN TO 0 PRINT I 1
+AND F(A(I)) = SQRT(ABS(T)) + 5 T**3, OR 1
+I AND TOO LARGE IF F(A(I)) EXCEEDS 400. 1
+INPUT: KNUTH'S OWN, 1 1.5 2 2.25 2.5    1
+2.75 3 3.25 3.5 4.5 5.5, AS FLOATING    1
+POINT DATA TERMS (FIG. 2, PAGE 140).    1
+ADAPTATIONS. (1) THE NUMBERS COME IN    1
+WITH THE DECK, AS THE DATA LIST L1, NOT 1
+BY A READ PROCESS: J182 READS ONLY      1
+INTEGERS AND BCD (SECTION 22.0, PAGE    1
+236), AND THE LINE READ PROCESSES CAME  1
+IN 1964 (SECTION 25.5), AFTER THE FIRST 1
+EDITION. (2) THE ELEVEN ARE A LIST, NOT 1
+AN ARRAY. J100 AND J64 MAKE A REVERSED  1
+COPY, AND J100 GENERATES IT, SO THE     1
+ORDER IS A10 TO A0. I IS COUNTED DOWN   1
+IN I0 BESIDE IT. (3) THERE IS NO SQUARE 1
+ROOT AMONG THE BASIC PROCESSES (SECTION 1
+11.0): S1 IS ONE, BY NEWTON'S METHOD.   1
+(4) F IS THE ROUTINE F1, WITH ITS INPUT 1
+AND OUTPUT IN H0. (5) TOO LARGE IS TWO  1
+DATA TERMS, 'TOO L' AND 'ARGE', FIVE    1
+CHARACTERS BEING ALL A DATA TERM HOLDS. 1
+(6) A NUMBER PRINTS AS J157 ENTERS IT   1
+(SECTION 16.2): SIX DIGITS OF FRACTION  1
+AND THE EXPONENT, 216246 03 FOR 216.246.1
+(7) S1 AND F1 USE W0 TO W2, PRESERVED   1
+ON ENTRY AND RESTORED ON EXIT.          1
+                                        2 A                11
+                                        2 F                10
+                                        2 I                10
+                                        2 K                10
+                                        2 L                10
+                                        2 N                10
+                                        2 P                10
+                                        2 S                10
+                                        2 T                10
+                                        5       00
+W0 AND W1 ARE PRESERVED.                  P0      J41
+CREATE AN EMPTY LIST                              J90
+AND KEEP ITS NAME IN W0.                        20W0
+                                                10L1
+                                                109-1
+EACH A(I) OF L1 TO THE FRONT OF 1W0.              J100
+                                                11W0
+                                                109-2
+FOR A10 TO A0 IN TURN, DO 9-2.                    J100
+                                                11W0
+ERASE THE REVERSED LIST.                          J71
+                                                  J31   0
+(0) IS A(I).                              9-1   11W0
+                                                  J6
+INSERT IT AFTER THE HEAD OF 1W0.                  J64
+H5 +: THE NEXT, PLEASE.                           J4    0
+(0) IS A(I). Y = F(A(I)), A NEW CELL,     9-2     F1
+KEPT IN W1.                                     20W1
+                                                  J154
+                                                10I0
+ENTER I.                                          J157
+                                                10N4
+TAB 4 COLUMNS FROM THE MARGIN.                    J160
+                                                10K0
+                                                11W1
+TEST Y > 400.                                     J115
+IF NOT, ENTER Y.                                709-3
+                                                10T1
+                                                  J157
+                                                10T2
+ENTER TOO LARGE.                                  J157  9-4
+                                          9-3   11W1
+ENTER Y.                                          J157
+PRINT THE LINE.                           9-4     J155
+                                                11W1
+ERASE Y.                                          J9
+                                                10N1
+                                                10I0
+                                                10I0
+I = I - 1.                                        J111
+                                                30H0
+H5 +: THE NEXT, PLEASE.                           J4    0
+F1: Y = SQRT(ABS(T)) + 5 X T**3, FOR    1
+T THE NUMBER (0). THE OUTPUT (0) NAMES  1
+Y, A NEW CELL.                          1
+W0 = T, W1 = C, A WORKING COPY.           F1      J41
+                                                20W0
+                                                11W0
+                                                  J120
+                                                20W1
+                                                11W0
+                                                11W1
+                                                11W1
+C = T X T.                                        J112
+                                                30H0
+                                                11W0
+                                                11W1
+                                                11W1
+C = T**3.                                         J112
+                                                30H0
+                                                10K5
+                                                11W1
+                                                11W1
+C = 5 X T**3.                                     J112
+                                                30H0
+(2) WILL BE C.                                  11W1
+                                                11W0
+Y = A COPY OF T,                                  J120
+MADE ABS(T),                                      J122
+AND SQRT(ABS(T)).                                 S1
+T IS DONE WITH: W0 = Y.                         60W0
+                                                11W0
+Y = Y + C.                                        J110
+                                                11W1
+ERASE C.                                          J9
+Y IS LEFT IN H0.                                  J31   0
+S1: TAKE THE SQUARE ROOT OF (0), LEAVE  1
+(0). (0) MUST NOT BE NEGATIVE. NEWTON'S 1
+METHOD: Y = (X + 1)/2, WHICH IS NOT     1
+LESS THAN SQRT(X); THEN Z = (Y + X/Y)/2 1
+WHILE Z IS LESS THAN Y.                 1
+W0 = X, W1 = Y, W2 = Z.                   S1      J42
+                                                20W0
+                                                11W0
+IS X ZERO.                                        J117
+IF NOT, ITERATE.                                709-1
+SQRT(0) IS 0.                                   11W0
+                                                  J32   0
+                                          9-1   11W0
+                                                  J120
+                                                20W1
+                                                10K1
+                                                11W1
+                                                11W1
+Y = X + 1.                                        J110
+                                                30H0
+                                                10K2
+                                                11W1
+                                                11W1
+Y = (X + 1)/2.                                    J113
+                                                  J120
+Z, A CELL FOR THE NEXT.                         20W2
+                                          9-2   11W1
+                                                11W0
+                                                11W2
+Z = X/Y.                                          J113
+                                                30H0
+                                                11W1
+                                                11W2
+                                                11W2
+Z = Z + Y.                                        J110
+                                                30H0
+                                                10K2
+                                                11W2
+                                                11W2
+Z = Z/2.                                          J113
+                                                30H0
+                                                11W1
+                                                11W2
+TEST Z < Y.                                       J116
+IF NOT, Y IS THE ROOT.                          709-3
+                                                11W2
+                                                11W1
+Y = Z,                                            J121
+AND AGAIN.                                      30H0    9-2
+                                          9-3   11W1
+                                                11W0
+X = Y.                                            J121
+                                                11W1
+                                                  J9
+                                                11W2
+ERASE Y AND Z.                                    J9
+X IS LEFT IN H0.                                  J32   0
+                                        5       01
+THE INPUT, A0 TO A10.                     L1      0
+                                                  A0
+                                                  A1
+                                                  A2
+                                                  A3
+                                                  A4
+                                                  A5
+                                                  A6
+                                                  A7
+                                                  A8
+                                                  A9
+                                                  A10   0
+                                          A0    111        01
+                                          A1    1115       01
+                                          A2    112        01
+                                          A3    11225      01
+                                          A4    1125       01
+                                          A5    11275      01
+                                          A6    113        01
+                                          A7    11325      01
+                                          A8    1135       01
+                                          A9    1145       01
+                                          A10   1155       01
+I, COUNTED DOWN FROM 10.                  I0    0110
+400.0                                     K0    114        03
+1.0                                       K1    111        01
+2.0                                       K2    112        01
+5.0                                       K5    115        01
+                                          N1    011
+                                          N4    014
+                                          T1    21TOO L
+                                          T2    21ARGE
+                                        5         P0

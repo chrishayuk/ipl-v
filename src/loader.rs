@@ -547,11 +547,14 @@ fn data_term(card: &Card) -> Res<Word> {
             })
         }
         1 => {
-            // .ddddd in SYMB, the exponent at the right of LINK, and any
-            // character in column 59 for a negative exponent.
+            // Fig. 2 (p. 140): .ddddd in SYMB (51-55) and the sixth digit
+            // in column 57, past the shaded column 56; the exponent at the
+            // right of LINK, and any character in column 59 for a negative
+            // exponent.
             let m: String = card
-                .text(COL_SYMB, COL_SYMB + 5)
+                .text(COL_SYMB, COL_SYMB + 4)
                 .iter()
+                .chain(card.text(57, 57).iter())
                 .filter(|c| c.is_ascii_digit())
                 .map(|&c| c as char)
                 .collect();

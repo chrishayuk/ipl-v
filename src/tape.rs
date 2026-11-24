@@ -458,25 +458,46 @@ impl Machine {
     }
 }
 
+/// Fig. 2 (page 140): the columns a decimal integer's digits go in (52-55
+/// and 58-61), and an octal number's (51-55 and 57-61). Column 56 is never
+/// used.
+const INT_COLUMNS: [usize; 8] = [52, 53, 54, 55, 58, 59, 60, 61];
+const OCTAL_COLUMNS: [usize; 10] = [51, 52, 53, 54, 55, 57, 58, 59, 60, 61];
+
+/// Columns 51 to 61 with `digits` set right-justified into `columns`. A
+/// number with more digits than the figure has room for (it shows eight
+/// decimal and ten octal) runs across all eleven columns, which is ours:
+/// the loader reads the digits of 51-61 in order either way.
+fn spread(digits: &str, columns: &[usize]) -> String {
+    if digits.len() > columns.len() {
+        return format!("{:>11}", digits);
+    }
+    let mut c = [b' '; 11];
+    for (&col, d) in columns.iter().rev().zip(digits.bytes().rev()) {
+        c[col - 51] = d;
+    }
+    String::from_utf8(c.to_vec()).unwrap()
+}
+
 /// SIGN and the columns from SYMB on of a data term's card (Fig. 2).
 fn data_fields(d: Datum) -> (u8, String) {
     match d {
-        Datum::Int(MINUS_ZERO) => (b'-', format!("{:>11}", 0)),
+        Datum::Int(MINUS_ZERO) => (b'-', spread("0", &INT_COLUMNS)),
         Datum::Int(i) => (
             if i < 0 { b'-' } else { b' ' },
-            format!("{:>11}", i.unsigned_abs()),
+            spread(&i.unsigned_abs().to_string(), &INT_COLUMNS),
         ),
         Datum::Octal(o) => {
             let v = o as i64;
             (
                 if v < 0 { b'-' } else { b' ' },
-                format!("{:>11o}", v.unsigned_abs()),
+                spread(&format!("{:o}", v.unsigned_abs()), &OCTAL_COLUMNS),
             )
         }
         Datum::Alpha(a) => (b' ', String::from_utf8_lossy(&a).into_owned()),
         Datum::Float(f) => {
             if f == 0.0 {
-                return (b' ', "000000     00".to_string());
+                return (b' ', "00000 0   00".to_string());
             }
             let mut e = f.abs().log10().floor() as i32 + 1;
             let mut m = (f.abs() / 10f64.powi(e) * 1e6).round() as i64;
@@ -484,11 +505,13 @@ fn data_fields(d: Datum) -> (u8, String) {
                 m /= 10;
                 e += 1;
             }
-            // The fraction in columns 51-56, the exponent's sign in 59 and
-            // its digits in 60 and 61.
+            // Fig. 2: the fraction's first five digits in SYMB (51-55),
+            // its sixth in column 57 past the unused column 56, the
+            // exponent's sign in 59 and its digits in 60 and 61.
+            let d = format!("{:06}", m);
             (
                 if f < 0.0 { b'-' } else { b' ' },
-                format!("{:06}  {}{:02}", m, if e < 0 { '-' } else { ' ' }, e.abs()),
+                format!("{} {} {}{:02}", &d[..5], &d[5..], if e < 0 { '-' } else { ' ' }, e.abs()),
             )
         }
     }

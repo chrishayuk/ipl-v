@@ -269,7 +269,7 @@ AND PRINT IT.                                     J155  0
 
 ## Examples
 
-`examples/` holds eighteen decks, each with the output it must print in a
+`examples/` holds nineteen decks, each with the output it must print in a
 `.out` file:
 
 | deck | |
@@ -291,6 +291,7 @@ AND PRINT IT.                                     J155  0
 | `tape-list-structure` | a list structure written with J142 and read back with J140 |
 | `save-for-restart` | J166 and a restart card in one run, as in section 20 |
 | `auxiliary-storage` | filing, moving in, copying, erasing and compacting, with W35 and W36 |
+| `tpk` | Knuth and Trabb Pardo's TPK (1976): floating data terms, a reversed list, and a square root by Newton's method; 2,757 cycles |
 
 ## In the browser
 
@@ -425,6 +426,13 @@ omissions where the manual leaves the matter to each machine's write-up
   says. This is a **conflict** between the sources.
 - **Minus zero.** Integer zero is signed, as J123 says; arithmetic that
   comes to zero gives plus zero, which the manual does not settle.
+- **Floating data terms are 64-bit binary floating point.** The manual
+  leaves their precision to the machine write-ups; the 704's word held
+  far fewer digits, so results here can be more exact than a 1960s run's.
+- **J157 rounds** a floating term to its six printed digits. Section
+  16.2's examples (page 215) are exact, so they do not show whether the
+  system rounded or cut off. With TPK, cutting off would print `216245 03`
+  and `105642 03` where this prints `216246 03` and `105643 03`.
 
 ## Corrections, and of what kind
 
@@ -444,6 +452,8 @@ from it, is one of four kinds:
 | `DFF.` for `DEF.` in the 1963 Logic Theorist printout | slip, in the 1963 printing; the test allows it |
 | The two missing commas in the 1963 printout (\*3.13, \*3.14) | not settled: the scan has them, the deck prints them; the test allows both |
 | List printing after Fig. 2 rather than page 214 | conflict |
+| The sixth digit of a floating data term read from column 56, which Fig. 2 (page 140) shades as unused, instead of 57; found writing `examples/tpk.iplv`, fixed in the loader and in J142's writer, which also ran integers and octal numbers across 51-61 where Fig. 2 puts them in 52-55 and 58-61, and 51-55 and 57-61 (tests: `a_floating_point_data_term_has_its_sixth_digit_in_column_57`, `integers_and_octal_numbers_are_punched_in_the_columns_of_fig_2`) | slip, in this implementation |
+| Floating data terms as 64-bit floating point, and J157 rounding rather than cutting off | interpretation |
 | Indented fields, a bare `9`, a print line's name in SYMB (as the Heuristic Coder of 1961 has it), a regional symbol beyond its region, regional cells erased only by J171, J142's `9-0` head, J129's multiplier, the first instruction at cycle 5, run-time addresses three lower | ours |
 | Tapes as files, J162's format, J166 printing nothing, routines in auxiliary storage kept in main storage, W38 and W42, J141 without a console, one card form | ours |
 | J101 marking, and a basic process reached by a LINK not being a step of its own (both repairs to this implementation) | ours |
